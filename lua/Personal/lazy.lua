@@ -94,6 +94,7 @@ require("lazy").setup({
     },
     "Darazaki/indent-o-matic",
     "tpope/vim-eunuch",
+    "okuuva/auto-save.nvim",
 
     --[[
           Better VCS support
