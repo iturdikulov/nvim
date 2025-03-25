@@ -1,18 +1,16 @@
+-- NEXT: need greatly refactor this file
+
 local vim_config_dir = vim.fn.stdpath("config")
 
 -- NOTE: set this before loading package manager
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
--- Exit terminal mode in the builtin terminal with a shortcut that is a bit
+-- extrueit terminal mode in the builtin terminal with a shortcut that is a bit
 -- easier for people to discover. Otherwise, you normally need to press
 -- <c-\><c-n>, which is not what someone will guess without a bit more
 -- experience.
 vim.keymap.set("t", "<esc><esc>", "<c-\\><c-n>", { desc = "Escape Escape exits terminal mode" })
-
--- Fix cyrillic Ctrl mappings
-vim.keymap.set("n", "<C-с>", "<C-d>")
-vim.keymap.set("n", "<C-ш>", "<C-u>")
 
 vim.keymap.set("n", "<C-d>", "<C-d>zz")
 vim.keymap.set("n", "<C-u>", "<C-u>zz")
@@ -21,9 +19,12 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz")
 vim.keymap.set("i", "<C-H>", "<C-W>", { noremap = true })
 
 -- Save on :W, this is workaround, sometimes I type :W instead :w...
-vim.api.nvim_create_user_command('W', function()
-    vim.cmd('w')
-end, {})
+vim.api.nvim_create_user_command('W', function() vim.cmd('w') end, {})
+
+-- Use Meta-S for saving, also in Insert mode
+vim.keymap.set("n", "<M-s>", ":update<CR>")
+vim.keymap.set("v", "<M-s>", "<C-c>:update<CR>")
+vim.keymap.set("i", "<M-s>", "<C-o>:update<CR>")
 
 -- Use different keys to increment number
 --- C-a I using for different things
@@ -32,7 +33,6 @@ vim.keymap.set({"n", "x"}, "<A-a>", "<C-a>")
 -- gf files with spaces
 vim.keymap.set("n", "gF", function()
     local line = vim.fn.getline(".")
-
     -- Remove 'directory:' from line
     local path = line:gsub("directory:", "")
 
@@ -78,6 +78,9 @@ vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 -- Replace word under cursor -> send to command mode
 vim.keymap.set("n", "<leader>S", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 
+-- Open netrw in current directory
+vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
+
 -- Make current file executable
 vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true })
 
@@ -90,7 +93,8 @@ vim.keymap.set("n", "<leader>O", "<cmd>!xdg-open %<CR>", { silent = true, desc =
 --- Open file in obsidian, file is current buffer name without .md extension
 vim.keymap.set("n", "<leader>to", function()
     local bufname = vim.fn.expand("%:t:r")
-    local obsidian_url = "obsidian://open?vault=Wiki&file=" .. bufname
+    local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+    local obsidian_url = "obsidian://adv-uri?vault=Wiki&filepath=" .. bufname .. "&line=" .. line .. "&column=" .. col
     vim.fn.jobstart({ 'obsidian_open', obsidian_url })
 end, { desc = "open in obsidian" })
 
@@ -144,7 +148,29 @@ end, { desc = "cd into current file path" })
 -- Open lazy config
 vim.keymap.set("n", "<leader>vpp", "<cmd>e " .. vim_config_dir .. "/lua/Personal/lazy.lua<CR>")
 
---
+-- Disable internal PageUp/PageDown, to use it in telescope/other places
+vim.keymap.set("n", "<PageUp>", "<NOP>")
+vim.keymap.set("n", "<PageDown>", "<NOP>")
+
+-- Google search
+--  Credit: June Gunn <Leader>?/! | Google it / Feeling lucky
+---@param pat string
+local function google(pat)
+  local query = '"' .. vim.fn.substitute(pat, '["\n]', " ", "g") .. '"'
+  query = vim.fn.substitute(query, "[[:punct:] ]", [[\=printf("%%%02X", char2nr(submatch(0)))]], "g")
+  do_open("https://www.google.com/search?" .. "q=" .. query)
+end
+
+-- gX: Web search
+vim.keymap.set('n', '<leader>tg', function()
+  vim.ui.open(('https://google.com/search?q=%s'):format(vim.fn.expand('<cword>')))
+end)
+vim.keymap.set('x', '<leader>tg', function()
+  vim.ui.open(('https://google.com/search?q=%s'):format(vim.trim(table.concat(
+    vim.fn.getregion(vim.fn.getpos('.'), vim.fn.getpos('v'), { type=vim.fn.mode() }), ' '))))
+  vim.api.nvim_input('<esc>')
+end)
+
 -- -- External commands
 -- vim.keymap.set("n", "<Leader>oc",
 -- ': silent !LDLIBS="-lcrypt -lcs50 -lm" clang "%" -o /tmp/a.out -lcs50 && kitty --hold -e /tmp/a.out<CR>')
@@ -247,126 +273,3 @@ local function renameLinkedFile()
 end
 
 vim.keymap.set("n", "<leader>rR", renameLinkedFile)
-
----
-
--- Insert timestamps from mpv
--- TODO: very scratchy, need to clean up/improve
-
-function RunBashScript(file_path)
-    -- Get the directory of the current lua script
-    local script_path = vim.fn.expand(vim.fn.stdpath("config") .. "/lua/Personal")
-
-    local bash_script = script_path .. "/mpv-start" -- Assuming myscript.sh is in the same directory
-    if file_path == nil then
-        local currentLine = vim.fn.getline(".")
-
-        -- Define a pattern to match the filename and seconds
-        local pattern = "%[(%d:%d%d:%d%d)%]%(<file://(.-)>%)"
-
-        -- Extract filename and seconds using the pattern
-        local duration, filename = currentLine:match(pattern)
-
-        if filename then
-            file_path = filename
-        else
-            file_path = vim.fn.input("File: ", "", "file")
-        end
-    elseif file_path == "" then
-        vim.fn.jobstart(bash_script)
-    end
-
-    local absolute_path = vim.fn.expand(file_path)
-    local job_id = vim.fn.jobstart({ bash_script, absolute_path })
-end
-
-function InsertTimestamp()
-    -- Pause video
-    vim.fn.system('echo \'{ "command": ["set_property", "pause", true] }\' | socat - /tmp/dublang-mpv.sock')
-
-    -- Get required data
-    local time_pos_data =
-        vim.fn.system('echo \'{ "command": ["get_property", "time-pos"] }\' | socat - /tmp/dublang-mpv.sock')
-    local file_path = vim.fn.system('echo \'{ "command": ["get_property", "path"] }\' | socat - /tmp/dublang-mpv.sock')
-    file_path = vim.fn.json_decode(file_path)["data"]
-
-    local time = math.floor(vim.fn.json_decode(time_pos_data)["data"])
-
-    local days = math.floor(time / 86400)
-    local remaining = time % 86400
-    local hours = math.floor(remaining / 3600)
-    remaining = remaining % 3600
-    local minutes = math.floor(remaining / 60)
-    remaining = remaining % 60
-    local seconds = remaining
-
-    if minutes < 10 then
-        minutes = "0" .. tostring(minutes)
-    end
-    if seconds < 10 then
-        seconds = "0" .. tostring(seconds)
-    end
-
-    -- Escape file path
-    file_path = vim.fn.expand(file_path)
-    -- Insert new line and go to next line
-    -- vim.api.nvim_put({""}, "l", true, false)
-    vim.api.nvim_put(
-        { "[" .. hours .. ":" .. minutes .. ":" .. seconds .. "](<file://" .. file_path .. ">)" },
-        "l",
-        false,
-        true
-    )
-    vim.cmd("startinsert!")
-end
-
-function OpenAndSeek()
-    -- Input string
-    local currentLine = vim.fn.getline(".")
-
-    -- Define a pattern to match the filename and seconds
-    local pattern = "%[(%d:%d%d:%d%d)%]%(<file://(.-)>%)"
-
-    -- Extract filename and seconds using the pattern
-    local duration, filename = currentLine:match(pattern)
-
-    if not duration or not filename then
-        print("No filename or duration found")
-        return
-    end
-
-    -- Convert duration to seconds
-    local hours, minutes, seconds = duration:match("(%d+):(%d+):(%d+)")
-    local totalSeconds = hours * 3600 + minutes * 60 + seconds
-    filename = vim.fn.expand(filename)
-
-    local file_path = vim.fn.system('echo \'{ "command": ["get_property", "path"] }\' | socat - /tmp/dublang-mpv.sock')
-    file_path = vim.fn.json_decode(file_path)["data"]
-    if file_path ~= filename then
-        vim.fn.system('echo \'{ "command" : ["loadfile", "' .. filename .. "\"] }' | socat - /tmp/dublang-mpv.sock && ")
-    end
-    vim.fn.system(
-        'echo \'{ "command": ["seek", "' .. totalSeconds .. '", "absolute"] }\' | socat - /tmp/dublang-mpv.sock'
-    )
-end
-
--- Open mpv with initial file
-vim.keymap.set(
-    { "i" },
-    "<C-g>",
-    InsertTimestamp,
-    { noremap = true, silent = true, desc = "[MPV] Insert timestamp" }
-)
-vim.keymap.set(
-    "n",
-    "<leader>tF",
-    ":lua RunBashScript()<CR>",
-    { noremap = true, silent = true, desc = "[MPV] Open mpv with initial file" }
-)
-vim.keymap.set(
-    "n",
-    "<leader>tM",
-    OpenAndSeek,
-    { noremap = true, silent = true, desc = "[MPV] Open and seek to timestamp" }
-)
-
