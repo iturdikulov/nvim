@@ -14,7 +14,6 @@ vim.opt.formatoptions:remove { "t" }
 
 vim.opt.smartindent = true
 
-vim.opt.swapfile = false
 vim.opt.backup = false
 vim.opt.undofile = true
 
