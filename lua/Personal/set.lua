@@ -71,7 +71,9 @@ vim.g.markdown_fenced_languages = {
 -- Set window title to the current base directory
 vim.opt.title = true
 vim.opt.titlestring = "%{expand('%:p:h:t')}"
+
 vim.g.markdown_folding = 1 -- enable markdown folding
+vim.cmd("autocmd FileType vim setlocal formatoptions=cqln")
 
 -- if windows set specific options, fix shell in msys2 (windows)
 if vim.fn.has('win32') == 1 then vim.opt.shellcmdflag = "-c" end
