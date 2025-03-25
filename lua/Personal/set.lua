@@ -65,7 +65,7 @@ vim.g.markdown_fenced_languages = {
     "ts=typescript",
     'typescript',    'html',            'css',
     'scss',          'yaml',            'toml',
-    'tex',           'nix'
+    'tex',           'nix',             'nginx'
 }
 
 -- Set window title to the current base directory
