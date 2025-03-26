@@ -24,17 +24,7 @@ neotest.setup({
       open = "botright split | resize 15"
     },
     adapters = {
-        neotest_python({
-            -- Extra arguments for nvim-dap configuration
-            -- See https://github.com/microsoft/debugpy/wiki/Debug-configuration-settings for values
-            dap = { justMyCode = false, console = "integratedTerminal" },
-            -- Command line arguments for runner
-            -- Can also be a function to return dynamic values
-            args = { "-vv", "-s", "--log-level", "DEBUG" },
-            -- Runner to use. Will use pytest if available by default.
-            -- Can be a function to return dynamic value.
-            runner = "pytest",
-        }),
+        neotest_python({}),
     },
 })
 
