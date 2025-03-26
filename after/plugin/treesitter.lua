@@ -37,7 +37,12 @@ vim.defer_fn(function()
             additional_vim_regex_highlighting = false,
             disable = { "latex" }  -- vimtex claims that their coloration is more accurate than what tree-sitter
         },
-        indent = { enable = true },
+        indent = {
+            enable = true,
+            disable = {
+                "markdown", -- indentation at bullet points is worse
+            },
+        },
         incremental_selection = {
             enable = true,
             keymaps = {
