@@ -25,9 +25,23 @@ conform.setup({
     }
 })
 
-vim.keymap.set({ "n", "x" }, "<leader>=", function()
+local function conform_format()
     conform.format({
         async = true,
         lsp_fallback = true
     })
+end
+
+vim.keymap.set({ "x" }, "<leader>=", function()
+    conform_format()
 end, { silent = true, desc = "[Conform] format" })
+
+vim.keymap.set({ "n" }, "<leader>=", function()
+    vim.ui.input({
+        prompt = "Do you want to format the file? [y/n]\n",
+    }, function(input)
+        if input == "y" then
+            conform_format()
+        end
+    end)
+end)
