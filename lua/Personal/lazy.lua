@@ -20,6 +20,7 @@ require("lazy").setup({
         "nvim-treesitter/nvim-treesitter",
         build = ":TSUpdate"
     },
+    { 'Darazaki/indent-o-matic' },
     { "LunarVim/bigfile.nvim" },
     { "folke/which-key.nvim" },
     --[[
@@ -91,8 +92,8 @@ require("lazy").setup({
         after = "nvim-treesitter",
         requires = "nvim-treesitter/nvim-treesitter",
     },
-    "Darazaki/indent-o-matic",
     "tpope/vim-eunuch",
+    "tpope/vim-obsession",
     "okuuva/auto-save.nvim",
 
     --[[
