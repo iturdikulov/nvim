@@ -101,15 +101,17 @@ require("el").setup {
         end
         local items = {
             {mode, required = true}, {git_branch}, {" "},
-            {sections.split, required = true}, {git_icon},
+            {sections.split, required = true},
+            {sections.collapse_builtin {{builtin.modified_flag}, {" "}}},
+            {git_icon},
             {
                 sections.maximum_width(builtin.file_relative, 0.3),
                 required = true
-            }, {sections.collapse_builtin {{" "}, {builtin.modified_flag}}},
+            },
             {sections.split, required = true}, {diagnostic_display},
-            -- { lsp_statusline.server_progress },
-            -- { ws_diagnostic_counts },
-            {git_changes}, {"["}, {builtin.line_with_width(3)}, {":"},
+            { lsp_statusline.server_progress },
+            { ws_diagnostic_counts },
+            {git_changes}, {"["}, {builtin.line_with_width(2)}, {"/"}, {builtin.number_of_lines}, {":"},
             {builtin.column_with_width(2)}, {"]"},
             {
                 sections.collapse_builtin {
