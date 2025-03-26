@@ -9,7 +9,7 @@ let g:zv_file_types = {
             \   'javascript'          : 'javascript,nodejs',
             \   'css'                 : 'css',
             \   'html'                : 'html',
-            \   'markdown'            : 'blender,godot,python,go,javascript,lua,rust',
+            \   'markdown'            : 'python,rust,go,javascript',
             \   'typescript'          : 'typescript,nodejs',
             \   'go'                  : 'go',
             \   'lua'                 : 'lua,neovim',
