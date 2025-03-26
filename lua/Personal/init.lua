@@ -2,6 +2,7 @@ require("Personal.set")
 require("Personal.remap")
 require("Personal.langmap")
 require("Personal.lazy")
+vim.cmd("source " .. vim.fn.stdpath("config") .. "/lua/Personal/xxd.vimrc")
 
 local augroup = vim.api.nvim_create_augroup
 local PersonalGroup = augroup('Personal', {})
