@@ -20,7 +20,6 @@ require("lazy").setup({
         "nvim-treesitter/nvim-treesitter",
         build = ":TSUpdate"
     },
-    { "ivanesmantovich/xkbswitch.nvim", enabled = is_linux },
     { "LunarVim/bigfile.nvim" },
     { "folke/which-key.nvim" },
     --[[

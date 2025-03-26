@@ -18,3 +18,17 @@ vim.opt.langmap = vim.fn.join({
     .. escape(en_shift),
     escape(ru) .. ";" .. escape(en),
 }, ",")
+
+local map = function(lhs, rhs, desc)
+    if desc then
+        desc = "[LSP] " .. desc
+    end
+
+    vim.keymap.set("n", lhs, rhs, { silent = true, desc = desc })
+end
+
+-- Fix cyrillic mappings
+vim.keymap.set("n", "<C-с>", "<C-d>")
+vim.keymap.set("n", "<C-ш>", "<C-u>")
+vim.keymap.set({"n", "x"}, "<leader>мфф", vim.lsp.buf.code_action)
+vim.keymap.set({"n", "v", "i"}, "<M-в>", ":update<CR>")
