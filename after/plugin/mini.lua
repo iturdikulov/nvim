@@ -15,10 +15,10 @@ require('mini.ai').setup { n_lines = 500 }
 -- - sd'   - [S]urround [D]elete [']quotes
 -- - sr)'  - [S]urround [R]eplace [)] [']
 require('mini.surround').setup({
-  -- Make `=` insert parts with spaces. `input` pattern stays the same.
-  custom_surroundings = {
-    ['='] = { output = { left = '==', right = '==' } },
-  }
+    -- Make `=` insert parts with spaces. `input` pattern stays the same.
+    custom_surroundings = {
+        ['='] = { output = { left = '==', right = '==' } },
+    }
 })
 
 -- Use `ss` to subtititute single char
@@ -68,9 +68,12 @@ require('mini.operators').setup(
 
 -- Files
 --
-require('mini.files').setup()
-vim.keymap.set("n", "<leader>pv", MiniFiles.open)
-
+require('mini.files').setup {
+    options = {
+        use_as_default_explorer = false,
+    },
+}
+vim.keymap.set("n", "<leader>pV", MiniFiles.open)
 
 -- ... and there is more!
 --  Check out: https://github.com/echasnovski/mini.nvim
