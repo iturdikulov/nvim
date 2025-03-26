@@ -201,13 +201,13 @@ lspconfig.lua_ls.setup({
         },
     },
 })
-lspconfig.ruff_lsp.setup({ on_attach = on_attach })
+lspconfig.ruff.setup({ on_attach = on_attach })
 lspconfig.basedpyright.setup({
     on_attach = on_attach,
     settings = {
         basedpyright = {
             analysis = {
-                diagnosticMode = "openFiles",  -- "workspace" or "openFiles"
+                diagnosticMode = "openFilesOnly",  -- "workspace" or "openFilesOnly"
             }
         }
     }
@@ -240,44 +240,9 @@ if ok then
     })
 end
 
----
--- Autocomplete
----
-require("luasnip.loaders.from_vscode").lazy_load()
-require("luasnip.loaders.from_vscode").load({
-    paths = { vim.fn.stdpath("config") .. "/snippets" },
-})
-
 local cmp = require("cmp")
 local luasnip = require("luasnip")
-
-luasnip.config.setup({
-    -- This tells LuaSnip to remember to keep around the last snippet.
-    -- You can jump back into it even if you move outside of the selection
-    history = false,
-
-    -- This one is cool cause if you have dynamic snippets, it updates as you type!
-    updateevents = "TextChanged,TextChangedI",
-
-    -- Autosnippets:
-    enable_autosnippets = true,
-})
-
--- <c-k> is my expansion key
--- this will expand the current item or jump to the next item within the snippet.
-vim.keymap.set({ "i", "s" }, "<c-k>", function()
-    if luasnip.expand_or_jumpable() then
-        luasnip.expand_or_jump()
-    end
-end, { silent = true })
-
--- <c-j> is my jump backwards key.
--- this always moves to the previous item within the snippet
-vim.keymap.set({ "i", "s" }, "<c-j>", function()
-    if luasnip.jumpable(-1) then
-        luasnip.jump(-1)
-    end
-end, { silent = true })
+local max_item_count = 12
 
 local select_opts = { behavior = cmp.SelectBehavior.Select }
 cmp.setup.filetype({ "sql", "mysql" }, {
@@ -287,33 +252,17 @@ cmp.setup.filetype({ "sql", "mysql" }, {
     }
 })
 cmp.setup({
+    max_item_count = max_item_count,
     sources = {
-        { name = "nvim_lsp", order = 50 },
-        { name = "luasnip", order = 40 },
-        { name = "path", order = 30 },
-        { name = "buffer", order = 20 },
-        { name = "supermaven", order = 10 },
+        { name = "nvim_lsp" },
+        { name = "path" },
+        { name = "luasnip" },
+        { name = "buffer" },
     },
     snippet = {
         expand = function(args)
             luasnip.lsp_expand(args.body)
         end,
-    },
-      sorting = {
-    priority_weight = 2,
-        comparators = {
-            cmp.config.compare.order,
-            -- Below is the default comparitor list and order for nvim-cmp
-            cmp.config.compare.offset,
-            -- cmp.config.compare.scopes, --this is commented in nvim-cmp too
-            cmp.config.compare.exact,
-            cmp.config.compare.score,
-            cmp.config.compare.recently_used,
-            cmp.config.compare.locality,
-            cmp.config.compare.kind,
-            cmp.config.compare.sort_text,
-            cmp.config.compare.length,
-        },
     },
     window = { documentation = cmp.config.window.bordered() },
     formatting = {
@@ -321,10 +270,10 @@ cmp.setup({
         format = function(entry, item)
             local menu_icon = {
                 nvim_lsp = ">",
-                luasnip = "s",
-                buffer = "b",
-                path = "/",
-                supermaven = "c",
+                luasnip = "[s]",
+                buffer = "[b]",
+                path = "[/]",
+                supermaven = "[c]",
             }
 
             item.menu = menu_icon[entry.source.name]
@@ -332,17 +281,29 @@ cmp.setup({
             return item
         end,
     },
+
     mapping = {
         ["<Tab>"] = vim.NIL,
         ["<S-Tab>"] = vim.NIL,
         ["<C-p>"] = cmp.mapping.select_prev_item(select_opts),
         ["<C-n>"] = cmp.mapping.select_next_item(select_opts),
 
+        ["<PageUp>"] = cmp.mapping.select_prev_item({ behavior = cmp.SelectBehavior.Select, count = 10 }),
+        ["<PageDown>"] = cmp.mapping.select_next_item({ behavior = cmp.SelectBehavior.Select, count = 10 }),
+
         ["<C-u>"] = cmp.mapping.scroll_docs(-4),
         ["<C-d>"] = cmp.mapping.scroll_docs(4),
 
         ["<C-space>"] = cmp.mapping.complete(),
-        ['<C-y>'] = cmp.mapping.confirm({ select = true }),
+        ["<C-y>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.confirm({select = true});
+          elseif luasnip.expandable() then
+            luasnip.expand()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
         ["<C-c>"] = cmp.mapping.abort(),
     },
 })
