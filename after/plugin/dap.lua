@@ -210,7 +210,7 @@ if has_dap_python then
     })
 end
 
-local lldb_path = vim.fn.exepath("lldb-vscode")
+local lldb_path = vim.env.LLDB_VSCODE_DEBUGGER_PATH
 if lldb_path then
     dap.adapters.lldb = {
         type = 'executable',
