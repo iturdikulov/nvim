@@ -13,10 +13,38 @@ local map = function(lhs, rhs, desc)
     vim.keymap.set("n", lhs, rhs, { silent = true, desc = desc })
 end
 
+local open_with_trouble = require("trouble.sources.telescope").open
+local actions = require("telescope.actions")
+
 telescope.setup({
     defaults = {
-        file_ignore_patterns = { "./node_modules" },
         borderchars = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+        mappings = {
+            i = {
+                ["<C-t>"] = open_with_trouble,
+                ["<esc>"] = actions.close,
+                ["<C-e>"] = { "<esc>", type = "command" },
+            },
+            n = {
+                ["<C-t>"] = open_with_trouble
+            },
+        },
+    },
+    pickers = {
+        find_files = {
+            find_command = {"rg", "--files", "-L", "--sortr=modified"},
+            mappings = {
+                n = {
+                    ["cd"] = function(prompt_bufnr)
+                        local selection = require("telescope.actions.state").get_selected_entry()
+                        local dir = vim.fn.fnamemodify(selection.path, ":p:h")
+                        require("telescope.actions").close(prompt_bufnr)
+                        -- Depending on what you want put `cd`, `lcd`, `tcd`
+                        vim.cmd(string.format("silent lcd %s", dir))
+                    end
+                }
+            }
+        }
     },
     extensions = {
         ["ui-select"] = {
@@ -50,9 +78,9 @@ pcall(telescope.load_extension, "media_files")
 -- find telescope builtins
 map("<leader>fb", builtin.buffers, "buffers")
 
-map('<leader>ff', builtin.find_files, "[F]ind [F]iles")
+map('<M-f>', builtin.find_files, "[F]ind [F]iles")
 
-map('<M-f>', function()
+map('<leader>ff', function()
     if vim.fn.filereadable(".git/HEAD") == 1 then
         builtin.git_files()
     else
