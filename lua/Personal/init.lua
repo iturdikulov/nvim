@@ -2,6 +2,8 @@ require("Personal.set")
 require("Personal.remap")
 require("Personal.langmap")
 require("Personal.lazy")
+require("Personal.checkbox")
+require("Personal.mpv")
 vim.cmd("source " .. vim.fn.stdpath("config") .. "/lua/Personal/xxd.vimrc")
 
 local augroup = vim.api.nvim_create_augroup
@@ -52,15 +54,6 @@ autocmd({ "BufRead" }, {
     group = PersonalViewGroup,
     pattern = "*",
     callback = function() vim.wo.listchars = GLOBAL_LISTCHARS end
-})
-
--- Return to last edit position when opening files
--- silent is needed to avoid errors when opening a file without a previous position
-vim.api.nvim_create_autocmd({ 'BufWinEnter' }, {
-    group = PersonalGroup,
-    desc = 'return cursor to where it was last time closing the file',
-    pattern = '*',
-    command = 'silent! normal! g`"zv'
 })
 
 -- Set *.asc files to markdown filetype
