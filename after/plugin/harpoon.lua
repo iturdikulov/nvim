@@ -17,17 +17,19 @@ local map = function(lhs, rhs, desc)
     vim.keymap.set("n", lhs, rhs, { silent = true, desc = desc })
 end
 
-map("<leader>a", function()
+map("<m-h><m-a>", function()
     harpoon:list():add()
 end, "Add File")
 
-map("<C-e>", function()
+map("<m-h><m-h>", function()
     harpoon.ui:toggle_quick_menu(harpoon:list())
 end, "Open harpoon UI")
 
-local bindings = { 't', 'g', 'm', 'n'  }
-for k,v in pairs(bindings) do
-  map("<C-" .. v .. ">", function() harpoon:list():select(k) end, "Navigate to file " .. k)
+-- Set <space>1..<space>5 be my shortcuts to moving to the files
+for _, idx in ipairs { 1, 2, 3, 4, 5 } do
+  vim.keymap.set("n", string.format("<space>%d", idx), function()
+    harpoon:list():select(idx)
+  end)
 end
 
 -- Toggle previous & next buffers stored within Harpoon list
