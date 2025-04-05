@@ -90,15 +90,12 @@ require("lazy").setup({
     {
         'AckslD/nvim-FeMaco.lua',
     },
-    {
-        "SuchithSridhar/nvim-treesitter-context", -- TODO: swap to upstream
-        after = "nvim-treesitter",
-        requires = "nvim-treesitter/nvim-treesitter",
-    },
     "tpope/vim-eunuch",
-    "tpope/vim-obsession",
     "okuuva/auto-save.nvim",
-
+    {
+      'rmagatti/auto-session',
+      lazy = false,
+    },
     --[[
           Better VCS support
      --]]

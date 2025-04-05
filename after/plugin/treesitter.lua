@@ -99,12 +99,4 @@ vim.defer_fn(function()
             -- },
         },
     }
-    require 'treesitter-context'.setup {
-        on_attach = function (buf)
-            if vim.api.nvim_buf_get_option(buf, 'filetype') == 'markdown' then
-                return false
-            end
-            return true
-        end
-    }
 end, 0)
