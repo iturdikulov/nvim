@@ -12,8 +12,6 @@ vim.opt.expandtab = true
 vim.opt.wrap = false
 vim.opt.formatoptions:remove { "t" }
 vim.opt.showmode = false
-vim.o.cmdheight = 0
-
 vim.opt.smartindent = true
 
 vim.opt.backup = false

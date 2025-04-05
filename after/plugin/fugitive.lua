@@ -3,6 +3,7 @@ if not vim.g.loaded_fugitive then return end
 -- Automatically start insert mode when opening gitcommit buffers
 vim.cmd [[
     autocmd FileType gitcommit startinsert
+
 ]]
 
 local Personal_Fugitive = vim.api.nvim_create_augroup("Personal_Fugitive", {})
