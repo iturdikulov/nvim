@@ -27,7 +27,10 @@ require("lazy").setup({
           Make nvim looking good
      --]]
     { "Inom-Turdikulov/alabaster.nvim" },
-    { "tjdevries/express_line.nvim" },
+    {
+        'nvim-lualine/lualine.nvim',
+        dependencies = { 'nvim-tree/nvim-web-devicons' }
+    },
     {
         "numToStr/Comment.nvim",
         lazy = false,
