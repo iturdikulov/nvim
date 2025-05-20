@@ -1,35 +1,29 @@
--- NEXT: need refactor this file
-
-
--- NOTE: set this before loading package manager
-vim.g.mapleader = " "
-vim.g.maplocalleader = " "
-
 -- extrueit terminal mode in the builtin terminal with a shortcut that is a bit
 -- easier for people to discover. Otherwise, you normally need to press
 -- <c-\><c-n>, which is not what someone will guess without a bit more
 -- experience.
-vim.keymap.set("t", "<esc><esc>", "<c-\\><c-n>", { desc = "Escape Escape exits terminal mode" })
+vim.keymap.set("t", "<c-n><c-n>", "<c-\\><c-n>", { desc = "Escape Escape exits terminal mode" })
 
 vim.keymap.set("n", "<C-d>", "<C-d>zz")
 vim.keymap.set("n", "<C-u>", "<C-u>zz")
 
--- NOTE: this keymap for xst/st term, in our case Ctrl-Backspace
+-- NOTE: this keymap for term, in our case Ctrl-Backspace
 vim.keymap.set("i", "<C-H>", "<C-W>", { noremap = true })
 
--- Save on :W, this is workaround, sometimes I type :W instead :w...
+-- Save on :W, quit on :Q, this is workaround, sometimes I type :W instead :w...
 vim.api.nvim_create_user_command('W', function() vim.cmd('w') end, {})
+vim.api.nvim_create_user_command('Q', function() vim.cmd('q') end, {})
 
--- Use Meta-S for saving, also in Insert mode
-vim.keymap.set("n", "<M-s>", ":update<CR>")
-vim.keymap.set("v", "<M-s>", "<C-c>:update<CR>")
-vim.keymap.set("i", "<M-s>", "<C-o>:update<CR>")
+-- Use Meta-S for saving, also save in Insert mode
+vim.keymap.set("n", "<M-w>", ":update<CR>")
+vim.keymap.set("v", "<M-w>", "<C-c>:update<CR>")
+vim.keymap.set("i", "<M-w>", "<C-o>:update<CR>")
 
 -- Use different keys to increment number
---- C-a I using for different things
+--- C-a I using for tmux prefix
 vim.keymap.set({"n", "x"}, "<A-a>", "<C-a>")
 
--- gf files with spaces
+-- Support gf for files with spaces
 vim.keymap.set("n", "gF", function()
     local line = vim.fn.getline(".")
     -- Remove 'directory:' from line
@@ -48,34 +42,38 @@ vim.keymap.set("n", "gF", function()
     vim.cmd("e " .. path)
 end, { desc = "gf files with spaces" })
 
--- move lines
-vim.keymap.set("v", "<C-J>", ":m '>+1<CR>gv=gv")
+-- move lines with C-K and C-J
 vim.keymap.set("v", "<C-K>", ":m '<-2<CR>gv=gv")
+vim.keymap.set("v", "<C-J>", ":m '>+1<CR>gv=gv")
 
--- save cursor on center
-vim.keymap.set("n", "J", "mzJ`z")
+-- save cursor on center on next/previous search and join lines
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
+vim.keymap.set("n", "J", "mzJ`z")
 
--- greatest remap ever, to replace selection with default register
+-- greatest remap ever, to replace selection with default register (yanked text)
 vim.keymap.set("x", "<leader>p", [["_dP]])
 
 -- next greatest remap ever : asbjornHaland
 -- integrate system clipboard with <leader>y
 vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]])
 vim.keymap.set("n", "<leader>Y", [["+Y]])
--- delete to void register
+
+-- special paste, which ignore delete and cut commands
+vim.keymap.set({ "n", "v"}, ",p", "0p")
+vim.keymap.set({ "n", "v"}, ",P", "0P")
+
+-- delete to void register (without copy to clipboard)
 vim.keymap.set({ "n", "v" }, "<leader>D", [["_d]])
 
 -- Quickfix list navigation
--- TODO: need check and fix
 vim.keymap.set("n", "<C-j>", "<cmd>cnext<CR>zz")
 vim.keymap.set("n", "<C-k>", "<cmd>cprev<CR>zz")
 vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz")
 vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
 
 -- Replace word under cursor -> send to command mode
-vim.keymap.set("n", "<leader>S", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
+vim.keymap.set("n", "<leader>/", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 
 -- Open netrw in current directory
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
@@ -101,149 +99,51 @@ end, { desc = "open in obsidian" })
 vim.keymap.set("n", "<M-x>", "<cmd>bd<CR>")
 
 -- Delete current file
--- TODO: need add confirmation
-vim.keymap.set("n", "<S-M-Del>", "<cmd>call delete(expand('%:p')) | bdelete! %<CR>")
-
--- Toggle signcolumn and line numbers
-vim.keymap.set("n", "<leader>zz", function()
-    vim.o.signcolumn = vim.o.signcolumn == "yes" and "no" or "yes"
-    vim.o.relativenumber = not vim.o.relativenumber
-    vim.o.number = not vim.o.number
-end)
+-- TODO: need to add confirmation
+vim.keymap.set("n", "<leader><Del>", "<cmd>call delete(expand('%:p')) | bdelete! %<CR>")
 
 -- Insert new line below/upper current line
 vim.keymap.set("n", "]<space>", "moo<Esc>`o")
 vim.keymap.set("n", "[<space>", "moO<Esc>`o")
 
--- resize windows more quickly
-vim.keymap.set("n", "<Leader>=", function()
-    vim.cmd('exe "resize " . (winheight(0) * 3/2)')
-end, { desc = "Resize window to 3/2" })
-
-vim.keymap.set("n", "<Leader>-", function()
-    vim.cmd('exe "resize " . (winheight(0) * 2/3)')
-end, { desc = "Resize window to 2/3" })
-
--- close current buffer
-vim.keymap.set("n", "<Leader>bd", ":bd<cr>", { desc = "Delete current buffer" })
-
 -- close all buffers except current one
-vim.keymap.set("n", "<Leader>bD", ":%bd|e#<cr>", { desc = "Close all buffers except current" })
+vim.keymap.set("n", "<Leader>bd", ":%bd|e#<cr>", { desc = "Close all buffers except current" })
 
 -- Reload Config
-vim.keymap.set("n", "<leader>vpr", "<cmd>lua ReloadConfig()<CR>", { desc = "Reload nvim config" })
+function _G.ReloadConfig()
+	for name, _ in pairs(package.loaded) do
+		if name:match("^user") and not name:match("nvim-tree") then
+			package.loaded[name] = nil
+		end
+	end
+
+	dofile(vim.env.MYVIMRC)
+	vim.notify("Nvim configuration reloaded!", vim.log.levels.INFO)
+end
+vim.keymap.set("n", "<leader>R", "<cmd>lua ReloadConfig()<CR>", { desc = "Reload nvim config" })
 
 -- requires some external tools
 
 -- cd into current file path
-vim.keymap.set("n", "<Leader>z%", function()
+vim.keymap.set("n", "<Leader>%", function()
     vim.cmd("!cd %:p:h")
 end, { desc = "cd into current file path" })
-
 
 -- Disable internal PageUp/PageDown, to use it in telescope/other places
 vim.keymap.set("n", "<PageUp>", "<NOP>")
 vim.keymap.set("n", "<PageDown>", "<NOP>")
 
--- Google search
---  Credit: June Gunn <Leader>?/! | Google it / Feeling lucky
----@param pat string
-local function google(pat)
-  local query = '"' .. vim.fn.substitute(pat, '["\n]', " ", "g") .. '"'
-  query = vim.fn.substitute(query, "[[:punct:] ]", [[\=printf("%%%02X", char2nr(submatch(0)))]], "g")
-  do_open("https://www.google.com/search?" .. "q=" .. query)
-end
-
 -- gX: Web search
-vim.keymap.set('n', '<leader>tg', function()
+vim.keymap.set('n', '<leader>gs', function()
   vim.ui.open(('https://google.com/search?q=%s'):format(vim.fn.expand('<cword>')))
 end)
-vim.keymap.set('x', '<leader>tg', function()
+vim.keymap.set('x', '<leader>gs', function()
   vim.ui.open(('https://google.com/search?q=%s'):format(vim.trim(table.concat(
     vim.fn.getregion(vim.fn.getpos('.'), vim.fn.getpos('v'), { type=vim.fn.mode() }), ' '))))
   vim.api.nvim_input('<esc>')
 end)
 
--- -- External commands
--- vim.keymap.set("n", "<Leader>oc",
--- ': silent !LDLIBS="-lcrypt -lcs50 -lm" clang "%" -o /tmp/a.out -lcs50 && kitty --hold -e /tmp/a.out<CR>')
-
---
---
--- -- search build.sh file in current directory and parent directories
--- local function search_build_sh_recursively(path)
---     local build_sh = path .. "/build.sh"
---     local build_bat = path .. "/build.bat"
---
---     if vim.fn.filereadable(build_sh) == 1 then
---         return build_sh
---     elseif vim.fn.filereadable(build_bat) == 1 then
---         return build_bat
---     end
---
---     -- if path included "Projects" then stop searching
---     local projects = vim.fn.expand("~/Projects")
---
---     -- if windows platform use different path
---     if vim.fn.has("win32") == 1 then
---         projects = vim.fn.expand("/w")
---     end
---
---     if vim.fn.fnamemodify(path, ":h") == projects then
---         return nil
---     end
---     -- if path is root then stop searching
---     if path == "/" then
---         return nil
---     end
---
---     return search_build_sh_recursively(vim.fn.fnamemodify(path, ":h"))
--- end
---
--- -- search build.sh file and run it, also run nvim-dap debugger
--- vim.keymap.set("n", "<Leader>bh", function()
---     local build_sh = search_build_sh_recursively(vim.fn.getcwd())
---     if build_sh then
---         -- save current file if it is modified
---         if vim.bo.modified then
---             vim.cmd("w")
---         end
---
---         -- run build.sh and if it exits with code 0 then run nvim-dap debugger
---         vim.cmd("silent !" .. build_sh)
---         -- if vim.v.shell_error == 0 then
---         --     vim.cmd("lua require('dap').continue()")
---         -- end
---     else
---         print("builder not found")
---     end
--- end)
---
---
--- -- run url_to_markdown_link.sh and then paste clipboard content
--- vim.keymap.set("n", "<Leader>pl", function()
---     vim.cmd("silent !url_to_markdown_link.sh")
---     local status = vim.v.shell_error
---     if status == 0 then
---         -- paste clipboard content
---         vim.cmd("normal! \"+p")
---     else
---         print("url_to_markdown_link.sh failed")
---     end
--- end, { desc = "Paste url as markdown link" })
---
--- -- run html2markdown.sh and then paste clipboard content
--- vim.keymap.set("n", "<Leader>ph", function()
---     vim.cmd("silent !html2markdown.sh")
---     local status = vim.v.shell_error
---     if status == 0 then
---         -- paste clipboard content
---         vim.cmd("normal! \"+p")
---     else
---         print("html2markdown.sh failed")
---     end
--- end, { desc = "Paste html as markdown" })
-
+-- Rename linked file
 local function renameLinkedFile()
     local linkText = vim.fn.expand("<cWORD>")
     local linkedFileName = linkText:match("%((.-)%)")
@@ -264,5 +164,4 @@ local function renameLinkedFile()
         print("No linked file detected.")
     end
 end
-
 vim.keymap.set("n", "<leader>rR", renameLinkedFile)
