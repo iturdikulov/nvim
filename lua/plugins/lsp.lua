@@ -6,81 +6,108 @@ return {
         "hrsh7th/cmp-path",
         "hrsh7th/cmp-cmdline",
         "hrsh7th/nvim-cmp",
+        "dmitmel/cmp-cmdline-history",
         "L3MON4D3/LuaSnip",
         "saadparwaiz1/cmp_luasnip",
     },
 
     config = function()
-        vim.lsp.enable('clangd')
-        vim.lsp.enable('gdscript')
-        vim.lsp.enable('ruff')
-        vim.lsp.enable('basedpyright')
-        vim.lsp.enable('biome')
-        vim.lsp.enable('gopls')
-        vim.lsp.enable('lua_ls')
-        vim.lsp.enable('bashls')
-        vim.lsp.enable('asm_lsp')
-        vim.lsp.config('rust_analyzer', {
+        vim.lsp.enable("clangd")
+        vim.lsp.enable("gdscript")
+        vim.lsp.enable("ruff")
+        vim.lsp.enable("basedpyright")
+        vim.lsp.enable("biome")
+        vim.lsp.enable("gopls")
+        vim.lsp.enable("lua_ls")
+        vim.lsp.enable("bashls")
+        vim.lsp.enable("asm_lsp")
+        vim.lsp.config("rust_analyzer", {
             -- Server-specific settings. See `:help lsp-quickstart`
             settings = {
-                ['rust-analyzer'] = {
+                ["rust-analyzer"] = {
                     diagnostics = {
-                        enable = true;
-                    }
+                        enable = true,
+                    },
                 },
             },
         })
-        vim.lsp.enable('rust_analyzer')
-        vim.lsp.enable('emmet_language_server')
+        vim.lsp.enable("rust_analyzer")
+        vim.lsp.enable("emmet_language_server")
 
-        local cmp = require('cmp')
+        -- Markdown oxide
+        local capabilities = require("cmp_nvim_lsp").default_capabilities(
+            vim.lsp.protocol.make_client_capabilities()
+        )
+        require("lspconfig").markdown_oxide.setup({
+            -- Ensure that dynamicRegistration is enabled! This allows the LS to take into account actions like the
+            -- Create Unresolved File code action, resolving completions for unindexed code blocks, ...
+            capabilities = vim.tbl_deep_extend("force", capabilities, {
+                workspace = {
+                    didChangeWatchedFiles = {
+                        dynamicRegistration = true,
+                    },
+                },
+            }),
+        })
+
+        local cmp = require("cmp")
         local cmp_lsp = require("cmp_nvim_lsp")
         local capabilities = vim.tbl_deep_extend(
             "force",
             {},
             vim.lsp.protocol.make_client_capabilities(),
-            cmp_lsp.default_capabilities())
+            cmp_lsp.default_capabilities()
+        )
 
         local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
         cmp.setup({
             snippet = {
                 expand = function(args)
-                    require('luasnip').lsp_expand(args.body) -- For `luasnip` users.
+                    require("luasnip").lsp_expand(args.body) -- For `luasnip` users.
                 end,
             },
             mapping = cmp.mapping.preset.insert({
-                ['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
-                ['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
-                ['<C-y>'] = cmp.mapping.confirm({ select = true }),
+                ["<C-p>"] = cmp.mapping.select_prev_item(cmp_select),
+                ["<C-n>"] = cmp.mapping.select_next_item(cmp_select),
+                ["<C-y>"] = cmp.mapping.confirm({ select = true }),
                 ["<C-Space>"] = cmp.mapping.complete(),
             }),
             sources = cmp.config.sources({
-                { name = 'nvim_lsp' },
-                { name = 'luasnip' }, -- For luasnip users.
+                {
+                    name = "nvim_lsp",
+                    option = {
+                        markdown_oxide = {
+                            keyword_pattern = [[\(\k\| \|\/\|#\)\+]],
+                        },
+                    },
+                },
+                { name = "luasnip" }, -- For luasnip users.
             }, {
-                { name = 'buffer' },
-                { name = 'path' }
-            })
+                { name = "buffer" },
+                { name = "path" },
+            }),
         })
 
         -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
-        cmp.setup.cmdline({ '/', '?' }, {
+        cmp.setup.cmdline({ "/", "?" }, {
             mapping = cmp.mapping.preset.cmdline(),
             sources = {
-                { name = 'buffer' }
-            }
+                { name = "buffer" },
+            },
         })
 
         -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
-        cmp.setup.cmdline(':', {
+        cmp.setup.cmdline(":", {
             mapping = cmp.mapping.preset.cmdline(),
             sources = cmp.config.sources({
-                { name = 'path' }
+                { name = 'cmdline_history' },
+            },{
+                { name = "path" },
             }, {
-                { name = 'cmdline' }
+                { name = "cmdline" },
             }),
-            matching = { disallow_symbol_nonprefix_matching = false }
+            matching = { disallow_symbol_nonprefix_matching = false },
         })
 
         vim.diagnostic.config({
@@ -109,16 +136,21 @@ return {
         -- CUSTOM LSP MAPPINGS
         local augroup = vim.api.nvim_create_augroup
         local autocmd = vim.api.nvim_create_autocmd
-        local LSPGroup = augroup('LSPGroup', {})
-        autocmd('LspAttach', {
+        local LSPGroup = augroup("LSPGroup", {})
+        autocmd("LspAttach", {
             group = LSPGroup,
             callback = function(e)
                 local opts = { buffer = e.buf }
-                vim.keymap.set("n", "gd", function() vim.lsp.buf.definition() end, opts)
-                vim.keymap.set("n", "go", function() vim.lsp.buf.workspace_symbol() end, opts)
-                vim.keymap.set("n", "gl", function() vim.diagnostic.open_float() end, opts)
-            end
+                vim.keymap.set("n", "gd", function()
+                    vim.lsp.buf.definition()
+                end, opts)
+                vim.keymap.set("n", "go", function()
+                    vim.lsp.buf.workspace_symbol()
+                end, opts)
+                vim.keymap.set("n", "gl", function()
+                    vim.diagnostic.open_float()
+                end, opts)
+            end,
         })
-
-    end
+    end,
 }
