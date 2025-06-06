@@ -92,7 +92,7 @@ vim.keymap.set("n", "<leader>to", function()
     local bufname = vim.fn.expand("%:t:r")
     local line, col = unpack(vim.api.nvim_win_get_cursor(0))
     local obsidian_url = "obsidian://adv-uri?vault=Wiki&filepath=" .. bufname .. "&line=" .. line .. "&column=" .. col
-    vim.fn.jobstart({ 'obsidian_open', obsidian_url })
+    vim.fn.jobstart({ 'obsidian', obsidian_url })
 end, { desc = "open in obsidian" })
 
 -- Quickly Destsroy current buffer
