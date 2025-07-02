@@ -9,6 +9,7 @@ return {
         "dmitmel/cmp-cmdline-history",
         "L3MON4D3/LuaSnip",
         "saadparwaiz1/cmp_luasnip",
+        "f3fora/cmp-spell",
     },
 
     config = function()
@@ -86,6 +87,16 @@ return {
             }, {
                 { name = "buffer" },
                 { name = "path" },
+                {
+                    name = "spell",
+                    option = {
+                        keep_all_entries = false,
+                        enable_in_context = function()
+                            return true
+                        end,
+                        preselect_correct_word = true,
+                    },
+                },
             }),
         })
 
