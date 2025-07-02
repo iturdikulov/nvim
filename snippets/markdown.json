@@ -1,0 +1,213 @@
+{
+  "Bridge Template": {
+      "prefix": "bridge",
+      "body": [
+          "---",
+          "date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}",
+          "tags:",
+          "  - blog",
+          "  - bridge",
+          "---",
+          "",
+          "# ${1:title}",
+          "",
+          "$0"
+      ],
+      "description": "Basic Note Template"
+  },
+  "Log Template": {
+      "prefix": "log",
+      "body": [
+          "---",
+          "date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}",
+          "tags:",
+          "  - blog",
+          "  - log",
+          "---",
+          "",
+          "# Log: ${1:title}",
+          "",
+          "## ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}",
+          "",
+          "$0"
+      ],
+      "description": "Log Template"
+  },
+  "Outline Template": {
+      "prefix": "outline",
+      "body": [
+          "---",
+          "date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}",
+          "tags:",
+          "  - blog",
+          "  - outline",
+          "---",
+          "",
+          "# ${1:title}",
+          "",
+          "$0"
+      ],
+      "description": "Outline Template"
+  },
+  "Permanent Note Template": {
+      "prefix": "permanent",
+      "body": [
+          "---",
+          "date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}",
+          "tags:",
+          "  - blog",
+          "---",
+          "",
+          "# ${1:title}",
+          "",
+          "$0"
+      ],
+      "description": "Permanent Note Template"
+  },
+  "Permanent Book Note Template": {
+      "prefix": "permanent_book",
+      "body": [
+          "---",
+          "date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}",
+          "tags:",
+          "  - blog",
+          "author: ${1:author}",
+          "---",
+          "",
+          "# ${2:title}",
+          "",
+          "$0"
+      ],
+      "description": "Permanent Book Note Template"
+  },
+  "Person Template": {
+      "prefix": "person",
+      "body": [
+          "---",
+          "date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}",
+          "tags:",
+          "  - blog",
+          "  - person",
+          "---",
+          "",
+          "# Person: ${1:title}",
+          "",
+          "place_public_photo_or_2dd",
+          "",
+          "| Field       | Details |",
+          "| ----------- | ------- |",
+          "| Born        |         |",
+          "| Other names |         |",
+          "| Education   |         |",
+          "| Occupations |         |",
+          "| Known for   |         |",
+          "| Awards      |         |",
+          "| Website     |         |",
+          "",
+          "$0"
+      ],
+      "description": "Person Template"
+  },
+  "Research Template": {
+      "prefix": "research",
+      "body": [
+          "---",
+          "date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}",
+          "tags:",
+          "  - blog",
+          "  - research",
+          "author:",
+          "file:",
+          "---",
+          "",
+          "# ${1:title}",
+          "",
+          "$0"
+      ],
+      "description": "Research Template"
+  },
+  "Term Template": {
+      "prefix": "term",
+      "body": [
+          "---",
+          "date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}",
+          "tags:",
+          "  - blog",
+          "  - term",
+          "---",
+          "",
+          "# ${1:title}",
+          "",
+          "$0"
+      ],
+      "description": "Term Template"
+  },
+  "Insert code block": {
+    "prefix": "cb",
+    "body": ["```${1:language}", "$0", "```"],
+    "description": "Insert fenced code block"
+  },
+  "Insert Go code block": {
+    "prefix": "cbg",
+    "body": ["```go", "$0", "```"],
+    "description": "Insert fenced C code block"
+  },
+  "Insert Python code block": {
+    "prefix": "cbp",
+    "body": ["```python", "$0", "```"],
+    "description": "Insert fenced Python code block"
+  },
+  "Insert shell code block": {
+    "prefix": "cbs",
+    "body": ["```sh", "$0", "```"],
+    "description": "Insert fenced Shell code block"
+  },
+  "Insert my date block": {
+    "prefix": "fr_date",
+    "body": ["date: ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}T${CURRENT_HOUR}:${CURRENT_MINUTE}${CURRENT_TIMEZONE_OFFSET}"],
+    "description": "Insert my date block"
+  },
+  "Insert blockquote snippet": {
+    "prefix": "bqt",
+    "body": [
+      "\\",
+      "> — <cite>$0</cite>"
+    ],
+    "description": "Insert blockquote snippet"
+  },
+  "Insert flashcard snippet": {
+    "prefix": "flc",
+    "body": ["<br class=\"f\">"],
+    "description": "Insert flashcard snippet"
+  },
+  "Insert inline flashcard snippet": {
+    "prefix": "inflc",
+    "body": [":<wbr class=\"f\"> $0"],
+    "description": "Insert flashcard snippet"
+  },
+  "Insert inverted inline flashcard snippet": {
+    "prefix": "inflci",
+    "body": [":<wbr class=\"f\" /> $0"],
+    "description": "Insert inverted flashcard snippet"
+  },
+  "Mathjax Big O": {
+    "prefix": "bo",
+    "body": ["\\$\\mathcal{O}($0)\\$"],
+    "description": "Insert mathjax Big O snippet"
+  },
+  "Mathjax Big O(n)": {
+    "prefix": "bon",
+    "body": ["\\$\\mathcal{O}(n$0)\\$"],
+    "description": "Insert mathjax Big O(n) snippet"
+  },
+  "Mathjax Big O(n^2)": {
+    "prefix": "bon2",
+    "body": ["\\$\\mathcal{O}(n^2$0)\\$"],
+    "description": "Insert mathjax Big (n^2) snippet"
+  },
+  "Mathjax Big O(log)": {
+    "prefix": "bolog",
+    "body": ["\\$\\mathcal{O}(log $0)\\$"],
+    "description": "Insert mathjax Big O(log) snippet"
+  }
+}
