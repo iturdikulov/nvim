@@ -1,6 +1,7 @@
 require("config.lazy")
 require("config.set")
 require("config.remap")
+require("config.spell")
 require("config.checkbox")
 require("config.langmap")
 vim.cmd("source " .. vim.fn.stdpath("config") .. "/lua/config/xxd.vimrc")
