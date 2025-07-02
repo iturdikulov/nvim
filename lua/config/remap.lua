@@ -10,7 +10,8 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz")
 -- NOTE: this keymap for term, in our case Ctrl-Backspace
 vim.keymap.set("i", "<C-H>", "<C-W>", { noremap = true })
 
--- Save on :W, quit on :Q, this is workaround, sometimes I type :W instead :w...
+-- Save on :W, quit on :Q, this is workarounds for this cases, sometimes I type
+-- :W instead :w...
 vim.api.nvim_create_user_command('W', function() vim.cmd('w') end, {})
 vim.api.nvim_create_user_command('Q', function() vim.cmd('q') end, {})
 
@@ -67,10 +68,10 @@ vim.keymap.set({ "n", "v"}, ",P", "0P")
 vim.keymap.set({ "n", "v" }, "<leader>D", [["_d]])
 
 -- Quickfix list navigation
-vim.keymap.set("n", "<C-j>", "<cmd>cnext<CR>zz")
-vim.keymap.set("n", "<C-k>", "<cmd>cprev<CR>zz")
-vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz")
-vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
+vim.keymap.set("n", "<leader>j", "<cmd>cnext<CR>zz")
+vim.keymap.set("n", "<leader>k", "<cmd>cprev<CR>zz")
+vim.keymap.set("n", "<leader>K", "<cmd>lnext<CR>zz")
+vim.keymap.set("n", "<leader>J", "<cmd>lprev<CR>zz")
 
 -- Replace word under cursor -> send to command mode
 vim.keymap.set("n", "<leader>/", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
