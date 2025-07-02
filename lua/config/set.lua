@@ -62,6 +62,12 @@ vim.g.markdown_fenced_languages = {
     'tex',           'nix',             'nginx'
 }
 
+-- Disable folding on opening
+vim.opt.foldlevelstart = 99
+
+-- Enable markdown folding (can be slow!)
+vim.g.markdown_folding = 1
+
 -- Set window title to the current base directory
 vim.opt.title = true
 vim.opt.titlestring = "%{expand('%:p:h:t')}"
@@ -86,3 +92,10 @@ end
 set_cursorline("WinLeave", false)
 set_cursorline("WinEnter", true)
 set_cursorline("FileType", false, "TelescopePrompt")
+
+-- Enable autoread and set up checking triggers
+vim.o.autoread = true
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
+  command = "if mode() != 'c' | checktime | endif",
+  pattern = "*",
+})
