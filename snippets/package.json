@@ -11,6 +11,12 @@
           "rmd"
         ],
         "path": "./markdown.json"
+      },
+      {
+        "language": [
+          "smarty"
+        ],
+        "path": "./dle.json"
       }
     ]
   }
