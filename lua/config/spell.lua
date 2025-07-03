@@ -15,7 +15,7 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
   callback = function()
     vim.opt_local.spell = true -- Enable spellcheck for these file types
     if vim.fn.expand('%:t'):match(".ru.") then
-        vim.opt_local.spelllang = 'ru_RU'
+        vim.opt_local.spelllang = 'ru'
     end
   end,
   desc = "Enable spellcheck for defined filetypes", -- Description for clarity
