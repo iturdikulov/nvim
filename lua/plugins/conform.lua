@@ -7,12 +7,13 @@ return {
         conform.setup({
             formatters_by_ft = {
                 lua = { "stylua" },
-                python = { "ruff_fix" }, -- ruff
+                python = { "ruff_fix", "ruff_format" }, -- ruff
                 go = { "goimports", "gofmt" },
                 javascript = { "biome-check" },
                 typescript = { "biome-check" },
                 typescriptreact = { "biome-check" },
                 html = { "djlint" },
+                smarty = { "djlint" },
                 jsx = { "biome-check" },
                 json = { "biome-check" },
                 jsonc = { "biome-check" },
