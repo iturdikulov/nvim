@@ -22,6 +22,7 @@ return {
         vim.lsp.enable("lua_ls")
         vim.lsp.enable("bashls")
         vim.lsp.enable("asm_lsp")
+        vim.lsp.enable("ts_ls")
         vim.lsp.config("rust_analyzer", {
             -- Server-specific settings. See `:help lsp-quickstart`
             settings = {
