@@ -34,7 +34,11 @@ return {
             },
         })
         vim.lsp.enable("rust_analyzer")
+
         vim.lsp.enable("emmet_language_server")
+        require("lspconfig").emmet_language_server.setup({
+            filetypes = { "css", "eruby", "html", "javascript", "javascriptreact", "less", "sass", "scss", "pug", "typescriptreact", "smarty" },
+        })
 
         -- Markdown oxide
         local capabilities = require("cmp_nvim_lsp").default_capabilities(
