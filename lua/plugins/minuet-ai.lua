@@ -4,14 +4,16 @@ return {
         config = function()
             -- Invoke special functions to parse list
             require("minuet").setup({
-                provider = "openai_fim_compatible",
+                provider = "openai_compatible",
                 n_completions = 1, -- recommend for local model for resource saving
                 -- I recommend beginning with a small context window size and incrementally
                 -- expanding it, depending on your local computing power. A context window
                 -- of 512, serves as an good starting point to estimate your computing
                 -- power. Once you have a reliable estimate of your local computing power,
                 -- you should adjust the context window to a larger value.
-                context_window = 4048,
+                request_timeout = 4.5,
+                throttle = 1500, -- Increase to reduce costs and avoid rate limits
+                debounce = 600, -- Increase to reduce costs and avoid rate limits
                 virtualtext = {
                     -- Specify the filetypes to enable automatic virtual text completion,
                     -- e.g., { 'python', 'lua' }. Note that you can still invoke manual
@@ -22,7 +24,7 @@ return {
                         accept = "<A-y>",
                         -- accept n lines (prompts for number)
                         -- e.g. "A-z 2 CR" will accept 2 lines
-                        accept_n_lines = "<A-z>",
+                        accept_n_lines = "<A-v>",
                         -- Cycle to next completion item, or manually invoke completion
                         next = "<M-f>",
                         -- Cycle to prev completion item, or manually invoke completion
@@ -30,13 +32,13 @@ return {
                     },
                     -- Whether show virtual text suggestion when the completion menu
                     -- (nvim-cmp or blink-cmp) is visible.
-                    show_on_completion_menu = true,
+                    show_on_completion_menu = false,
                 },
                 provider_options = {
                     openai_compatible = {
                         api_key = "OPENROUTER_API_KEY",
                         end_point = "https://openrouter.ai/api/v1/chat/completions",
-                        model = "openai/gpt-4o-mini",
+                        model = "anthropic/claude-sonnet-4.5",
                         name = "Openrouter",
                         optional = {
                             max_tokens = 56,
@@ -65,5 +67,5 @@ return {
     },
     { "nvim-lua/plenary.nvim" },
     -- optional, if you are using virtual-text frontend, blink is not required.
-    { "Saghen/blink.cmp" },
+    { "hrsh7th/nvim-cmp" },
 }
