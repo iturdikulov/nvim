@@ -13,58 +13,7 @@ return {
     },
 
     config = function()
-        vim.lsp.enable("clangd")
-        vim.lsp.enable("gdscript")
-        vim.lsp.enable("ruff")
-        vim.lsp.enable("basedpyright")
-        vim.lsp.enable("biome")
-        vim.lsp.enable("gopls")
-        vim.lsp.enable("lua_ls")
-        vim.lsp.enable("bashls")
-        vim.lsp.enable("asm_lsp")
-        vim.lsp.enable("ts_ls")
-        vim.lsp.config("rust_analyzer", {
-            -- Server-specific settings. See `:help lsp-quickstart`
-            settings = {
-                ["rust-analyzer"] = {
-                    diagnostics = {
-                        enable = true,
-                    },
-                },
-            },
-        })
-        vim.lsp.enable("rust_analyzer")
-
-        vim.lsp.enable("emmet_language_server")
-        require("lspconfig").emmet_language_server.setup({
-            filetypes = { "css", "eruby", "html", "javascript", "javascriptreact", "less", "sass", "scss", "pug", "typescriptreact", "smarty" },
-        })
-
-        -- Markdown oxide
-        local capabilities = require("cmp_nvim_lsp").default_capabilities(
-            vim.lsp.protocol.make_client_capabilities()
-        )
-        require("lspconfig").markdown_oxide.setup({
-            -- Ensure that dynamicRegistration is enabled! This allows the LS to take into account actions like the
-            -- Create Unresolved File code action, resolving completions for unindexed code blocks, ...
-            capabilities = vim.tbl_deep_extend("force", capabilities, {
-                workspace = {
-                    didChangeWatchedFiles = {
-                        dynamicRegistration = true,
-                    },
-                },
-            }),
-        })
-
         local cmp = require("cmp")
-        local cmp_lsp = require("cmp_nvim_lsp")
-        local capabilities = vim.tbl_deep_extend(
-            "force",
-            {},
-            vim.lsp.protocol.make_client_capabilities(),
-            cmp_lsp.default_capabilities()
-        )
-
         local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
         cmp.setup({
@@ -76,7 +25,17 @@ return {
             mapping = cmp.mapping.preset.insert({
                 ["<C-p>"] = cmp.mapping.select_prev_item(cmp_select),
                 ["<C-n>"] = cmp.mapping.select_next_item(cmp_select),
-                ["<C-y>"] = cmp.mapping.confirm({ select = true }),
+
+                ["<C-y>"] = cmp.mapping(function(fallback)
+                    if cmp.visible() then
+                        cmp.confirm({
+                            select = true,
+                        })
+                    else
+                        fallback()
+                    end
+                end),
+
                 ["<C-Space>"] = cmp.mapping.complete(),
             }),
             sources = cmp.config.sources({
@@ -89,42 +48,207 @@ return {
                     },
                 },
                 { name = "luasnip" }, -- For luasnip users.
-            }, {
-                { name = "buffer" },
-                { name = "path" },
+                { name = "path", max_item_count = 3 },
+                { name = "buffer", max_item_count = 5 },
+                { name = "codecompanion" },
                 {
                     name = "spell",
                     option = {
                         keep_all_entries = false,
                         enable_in_context = function()
-                            return true
+                            return require("cmp.config.context").in_treesitter_capture(
+                                "spell"
+                            )
                         end,
                         preselect_correct_word = true,
                     },
+                    max_item_count = 3,
                 },
             }),
         })
 
         -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
-        cmp.setup.cmdline({ "/", "?" }, {
-            mapping = cmp.mapping.preset.cmdline(),
-            sources = {
-                { name = "buffer" },
-            },
-        })
-
-        -- Use cmdline & path source for ':' (if you enabled `native_menu`, this won't work anymore).
         cmp.setup.cmdline(":", {
             mapping = cmp.mapping.preset.cmdline(),
             sources = cmp.config.sources({
-                { name = 'cmdline_history' },
-            },{
-                { name = "path" },
-            }, {
-                { name = "cmdline" },
+                { name = 'cmdline_history', max_item_count = 3 },
+                { name = "cmdline", max_item_count = 10 },
+                { name = "path", max_item_count = 3 },
+                { name = "buffer", max_item_count = 3 },
             }),
-            matching = { disallow_symbol_nonprefix_matching = false },
         })
+
+        cmp.setup.cmdline({ "/", "?" }, {
+            mapping = cmp.mapping.preset.cmdline(),
+            sources = cmp.config.sources({
+                { name = 'cmdline_history', max_item_count = 3 },
+                { name = "buffer", max_item_count = 3 },
+            }),
+        })
+
+        -- LSP
+        local capabilities = require("cmp_nvim_lsp").default_capabilities()
+        local base_config_lsp = {
+            "clangd",
+            "gdscript",
+            "ruff",
+            "biome",
+            "gopls",
+            "bashls",
+            "asm_lsp",
+            "ts_ls",
+            "dockerls",
+            "yamlls",
+        }
+
+        for _, lsp in ipairs(base_config_lsp) do
+            vim.lsp.config(lsp, {
+                capabilities = capabilities,
+            })
+            vim.lsp.enable(lsp)
+        end
+
+        vim.lsp.config("texlab", {
+            capabilities = capabilities,
+            settings = {
+                texlab = {
+                    bibtexFormatter = "texlab",
+                    build = {
+                        args = {
+                            "-pdf",
+                            "-interaction=nonstopmode",
+                            "-synctex=1",
+                            "%f",
+                        },
+                        executable = "latexmk",
+                        forwardSearchAfter = false,
+                        onSave = true,
+                    },
+                    chktex = {
+                        onEdit = false,
+                        onOpenAndSave = true,
+                    },
+                    diagnosticsDelay = 300,
+                    formatterLineLength = 80,
+                    forwardSearch = {
+                        executable = "sioyek",
+                        args = {
+                            "--reuse-window",
+                            "--execute-command",
+                            "toggle_synctex",
+                            "--inverse-search",
+                            'texlab inverse-search -i "%%1" -l %%2',
+                            "--forward-search-file",
+                            "%f",
+                            "--forward-search-line",
+                            "%l",
+                            "%p",
+                        },
+                    },
+                    latexFormatter = "latexindent",
+                    latexindent = {
+                        modifyLineBreaks = false,
+                    },
+                },
+            },
+        })
+        vim.lsp.enable("texlab")
+
+        vim.lsp.config("basedpyright", {
+            capabilities = capabilities,
+            settings = {
+                basedpyright = {
+                    typeCheckingMode = "basic", -- off, basic, standard, strict, all
+                    analysis = {
+                        inlayHints = {
+                            callArgumentNames = false,
+                        },
+                    },
+                },
+            },
+        })
+        vim.lsp.enable("basedpyright")
+
+        vim.lsp.config("lua_ls", {
+            capabilities = capabilities,
+            settings = {
+                Lua = {
+                    telemetry = { enable = false },
+                    hint = { enable = true },
+                },
+            },
+        })
+        vim.lsp.enable("lua_ls")
+
+        vim.lsp.config("rust_analyzer", {
+            -- Server-specific settings. See `:help lsp-quickstart`
+            settings = {
+                ["rust-analyzer"] = {
+                    diagnostics = {
+                        enable = true,
+                    },
+                },
+            },
+        })
+        vim.lsp.enable("rust_analyzer")
+
+        vim.lsp.config("emmet_language_server", {
+            filetypes = {
+                "css",
+                "eruby",
+                "html",
+                "javascript",
+                "javascriptreact",
+                "less",
+                "sass",
+                "scss",
+                "pug",
+                "typescriptreact",
+                "smarty",
+            },
+        })
+        vim.lsp.enable("emmet_language_server")
+
+        -- Markdown oxide
+        vim.lsp.config("markdown_oxide", {
+            -- Ensure that dynamicRegistration is enabled! This allows the LS to take into account actions like the
+            -- Create Unresolved File code action, resolving completions for unindexed code blocks, ...
+            capabilities = vim.tbl_deep_extend("force", capabilities, {
+                workspace = {
+                    didChangeWatchedFiles = {
+                        dynamicRegistration = true,
+                    },
+                },
+            }),
+        })
+        vim.lsp.enable("markdown_oxide")
+
+        vim.lsp.config("cssls", {
+            capabilities = vim.tbl_deep_extend("force", capabilities, {
+                textDocument = {
+                    completion = {
+                        completionItem = {
+                            snippetSupport = true
+                        },
+                    },
+                },
+            }),
+        })
+        vim.lsp.enable("cssls")
+
+        vim.lsp.config("html", {
+            capabilities = vim.tbl_deep_extend("force", capabilities, {
+                textDocument = {
+                    completion = {
+                        completionItem = {
+                            snippetSupport = true
+                        },
+                    },
+                },
+            }),
+            filetypes = { "html", "templ", "smarty", "jinja" }
+        })
+        vim.lsp.enable("html")
 
         vim.diagnostic.config({
             -- update_in_insert = true,
@@ -138,34 +262,38 @@ return {
             },
         })
 
-        -- GLOBAL LSP MAPPING DEFAULTS
-        -- grr gra grn gri i_CTRL-S These GLOBAL keymaps are created unconditionally when Nvim starts:
-        -- "grn" is mapped in Normal mode to vim.lsp.buf.rename()
-        -- "gra" is mapped in Normal and Visual mode to vim.lsp.buf.code_action()
-        -- "grr" is mapped in Normal mode to vim.lsp.buf.references()
-        -- "gri" is mapped in Normal mode to vim.lsp.buf.implementation()
-        -- "gO" is mapped in Normal mode to vim.lsp.buf.document_symbol()
-        -- CTRL-S is mapped in Insert mode to vim.lsp.buf.signature_help()
-        -- [d next diagnostics
-        -- ]d previous diagnostics
+        -- Enable inlay hints by default
+        vim.lsp.inlay_hint.enable()
 
-        -- CUSTOM LSP MAPPINGS
+        -- Enable formatting on-type if possible
+        vim.lsp.on_type_formatting.enable()
+
         local augroup = vim.api.nvim_create_augroup
         local autocmd = vim.api.nvim_create_autocmd
         local LSPGroup = augroup("LSPGroup", {})
         autocmd("LspAttach", {
             group = LSPGroup,
             callback = function(e)
-                local opts = { buffer = e.buf }
-                vim.keymap.set("n", "gd", function()
-                    vim.lsp.buf.definition()
-                end, opts)
-                vim.keymap.set("n", "go", function()
-                    vim.lsp.buf.workspace_symbol()
-                end, opts)
-                vim.keymap.set("n", "gl", function()
-                    vim.diagnostic.open_float()
-                end, opts)
+                local map = function(lhs, rhs, desc)
+                    if desc then
+                        desc = "[LSP] " .. desc
+                    end
+
+                    vim.keymap.set(
+                        "n",
+                        lhs,
+                        rhs,
+                        { buffer = e.buf, desc = desc }
+                    )
+                end
+
+                -- Custom LSP mappings
+                map("K", vim.lsp.buf.hover, "show hover documentation")
+                map("gd", vim.lsp.buf.definition, "show definitions")
+                map("go", vim.lsp.buf.workspace_symbol, "workspace symbol")
+                map("gl", vim.diagnostic.open_float, "open diagnostic")
+
+                -- GLOBAL LSP MAPPING DEFAULTS, check with :h grr
             end,
         })
     end,
