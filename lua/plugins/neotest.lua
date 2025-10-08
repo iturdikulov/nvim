@@ -19,9 +19,9 @@ return {
 
         map("<leader>dnn", function()
             neotest.run.run()
-        end, "neotest run the nearest test")
+        end, "run the nearest test")
 
-        map("<leader>dnr", neotest.run.run_last, "neotest run the last test")
+        map("<leader>dnr", neotest.run.run_last, "run the last test")
 
         map("<leader>dnc", function()
             neotest.run.run({ strategy = "dap" })
@@ -47,8 +47,8 @@ return {
             neotest.output_panel.toggle({ enter = true })
         end, "toggle the output panel")
 
-        map("]n", neotest.jump.next, "Neotest jump to the next test")
-        map("[n", neotest.jump.prev, "Neotest jump to the previous test")
+        map("]n", neotest.jump.next, "jump to the next test")
+        map("[n", neotest.jump.prev, "jump to the previous test")
     end,
     dependencies = {
         "nvim-neotest/nvim-nio",
