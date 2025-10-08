@@ -39,6 +39,16 @@ return {
             local dap = require("dap")
             dap.set_log_level("DEBUG")
 
+            vim.keymap.set("n", "<leader>dC", function() dap.run_to_cursor() end, { desc = "Run to cursor" })
+            vim.keymap.set("n", "<leader>dg", function() dap.goto_() end, { desc = "Go to line (no execute)" })
+            vim.keymap.set("n", "<leader>dj", function() dap.down() end, { desc = "down" })
+            vim.keymap.set("n", "<leader>dk", function() dap.up() end, { desc = "Up" })
+            vim.keymap.set("n", "<leader>dl", function() dap.run_last() end, { desc = "Run last" })
+            vim.keymap.set("n", "<leader>dp", function() dap.pause() end, { desc = "Pause" })
+            vim.keymap.set("n", "<leader>ds", function() dap.session() end, { desc = "Session" })
+            vim.keymap.set("n", "<leader>dt", function() dap.terminate() end, { desc = "Terminate" })
+            vim.keymap.set("n", "<leader>dW", function() require("dap.ui.widgets").hover() end, { desc = "Widgets" })
+
             vim.keymap.set("n", "<F5>", dap.continue, { desc = "Debug: Continue" })
             vim.keymap.set("n", "<F10>", dap.step_over, { desc = "Debug: Step Over" })
             vim.keymap.set("n", "<F11>", dap.step_into, { desc = "Debug: Step Into" })
