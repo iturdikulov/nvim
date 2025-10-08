@@ -43,9 +43,9 @@ vim.keymap.set("n", "gF", function()
     vim.cmd("e " .. path)
 end, { desc = "gf files with spaces" })
 
--- move lines with C-K and C-J
-vim.keymap.set("v", "<C-K>", ":m '<-2<CR>gv=gv")
-vim.keymap.set("v", "<C-J>", ":m '>+1<CR>gv=gv")
+-- move lines
+vim.keymap.set("v", "<M-K>", ":m '<-2<CR>gv=gv")
+vim.keymap.set("v", "<M-J>", ":m '>+1<CR>gv=gv")
 
 -- save cursor on center on next/previous search and join lines
 vim.keymap.set("n", "n", "nzzzv")
@@ -98,6 +98,42 @@ end, { desc = "open in obsidian" })
 
 -- Quickly Destsroy current buffer
 vim.keymap.set("n", "<M-x>", "<cmd>bd<CR>")
+
+-- Search on selected text
+vim.keymap.set("x", "g/", "<Esc>/\\%V")
+
+-- Copy current file path to clipboard
+vim.keymap.set("n", "<leader>l", function()
+  vim.fn.setreg("+", vim.fn.expand("%:."))
+  vim.notify(("'%s' was copied to clipboard"):format(vim.fn.getreg("+")), vim.log.levels.INFO)
+end, { silent = true })
+
+---------------
+-- Text objects
+---------------
+-- Line text objects
+vim.keymap.set({ "x", "o" }, "iL", ":<C-u>normal! g_v^<CR>", { silent = true })
+vim.keymap.set({ "x", "o" }, "aL", ":<C-u>normal! $v0<CR>", { silent = true })
+-- Document text objects
+vim.keymap.set({ "x", "o" }, "id", ":<C-u>normal! G$vgg0<CR>", { silent = true })
+
+-- Copy current location to clipboard
+vim.keymap.set("x", "<leader>l", function()
+  local path = vim.fn.expand("%:.")
+
+  local srow = vim.fn.line("v")
+  local erow = vim.fn.line(".")
+  if srow > erow then
+    srow, erow = erow, srow
+  end
+
+  if srow == erow then
+    vim.fn.setreg("+", ("%s:%d"):format(path, srow))
+  else
+    vim.fn.setreg("+", ("%s:%d-%d"):format(path, srow, erow))
+  end
+  vim.notify(("'%s' was copied to clipboard"):format(vim.fn.getreg("+")), vim.log.levels.INFO)
+end, { silent = true })
 
 -- Delete current file
 -- TODO: need to add confirmation
@@ -166,3 +202,52 @@ local function renameLinkedFile()
     end
 end
 vim.keymap.set("n", "<leader>rR", renameLinkedFile)
+
+-- Go to folder with -
+vim.keymap.set("n", "-", "<CMD>e %:h<CR>")
+
+-- Make mappings similar to TMUX mappings for Vim tabs
+vim.keymap.set("n", "<C-t>c", "<CMD>tabnew<CR>")
+vim.keymap.set("n", "<C-t>w", "<CMD>tabs<CR>")
+vim.keymap.set("n", "<C-t>[", "<CMD>tabnext<CR>")
+vim.keymap.set("n", "<C-t>]", "<CMD>tabprevious<CR>")
+vim.keymap.set("n", "<C-t>x", "<CMD>tabclose<CR>")
+
+-- Make `j` work with wrapped lines
+vim.keymap.set({ "n", "v" }, "j", function()
+  if vim.v.count == 0 then
+    return "gj"
+  else
+    return "m'" .. vim.v.count .. "j"
+  end
+end, { expr = true })
+
+-- Make `k` work with wrapped lines
+vim.keymap.set({ "n", "v" }, "k", function()
+  if vim.v.count == 0 then
+    return "gk"
+  else
+    return "m'" .. vim.v.count .. "k"
+  end
+end, { expr = true })
+
+--
+vim.keymap.set("n", "<leader>fe", function()
+  local options = {
+    { value = "e ++enc=utf8", label = "utf-8" },
+    { value = "e ++enc=cp1251 ++ff=dos", label = "windows-1251" },
+    { value = "e ++enc=cp866 ++ff=dos", label = "cp866" },
+    { value = "e ++enc=koi8-r ++ff=unix", label = "koi8-r" },
+    { value = "e ++enc=koi8-u ++ff=unix", label = "koi8-u" },
+  }
+  vim.ui.select(options, {
+    prompt = "Override file encoding to:",
+    format_item = function(item)
+      return item.label
+    end,
+  }, function(choice)
+    if choice then
+      vim.cmd(":" .. choice.value)
+    end
+  end)
+end, { desc = "Change File Encoding" } )

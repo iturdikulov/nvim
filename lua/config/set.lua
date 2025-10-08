@@ -1,6 +1,4 @@
-GLOBAL_LISTCHARS = "tab:>-,extends:>,precedes:<,nbsp:␣"
-
-vim.opt.colorcolumn = "81"
+vim.opt.colorcolumn = "80"
 vim.opt.termguicolors = true
 
 vim.opt.nu = true
@@ -10,14 +8,23 @@ vim.opt.tabstop = 4
 vim.opt.softtabstop = 4
 vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
-vim.opt.wrap = false
 vim.opt.formatoptions:remove { "t" }
 
 vim.opt.showmode = false
 vim.opt.smartindent = true
 
+-- Wrapping
+vim.opt.linebreak = true
+vim.opt.breakindent = true
+vim.opt.breakindentopt = { "shift:0" }
+vim.opt.showbreak = "↳ "
+
 vim.opt.backup = false
 vim.opt.undofile = true
+vim.opt.swapfile = false
+
+-- Enable local configuration
+vim.opt.exrc = true
 
 -- Case-insensitive searching UNLESS \C or capital in search
 vim.opt.ignorecase = true
@@ -35,7 +42,7 @@ vim.opt.isfname:append("@-@")
 
 -- Show return characters
 vim.wo.list = true
-vim.wo.listchars = GLOBAL_LISTCHARS
+vim.wo.listchars = "tab:>-,extends:>,precedes:<,nbsp:␣"
 
 -- Configure how new splits should be opened
 vim.opt.splitright = true
