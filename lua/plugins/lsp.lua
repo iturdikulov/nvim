@@ -10,6 +10,7 @@ return {
         "L3MON4D3/LuaSnip",
         "saadparwaiz1/cmp_luasnip",
         "f3fora/cmp-spell",
+        "nanotee/sqls.nvim"
     },
 
     config = function()
@@ -250,6 +251,13 @@ return {
         })
         vim.lsp.enable("html")
 
+        vim.lsp.config("sqls", {
+            capabilities = capabilities,
+            cmd = {"sqls", "-config", "/home/inom/.config/sqls/config.yml"};
+        })
+        vim.lsp.enable("sqls")
+
+        -- Configure diagnostic
         vim.diagnostic.config({
             -- update_in_insert = true,
             float = {

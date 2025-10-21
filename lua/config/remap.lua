@@ -76,9 +76,6 @@ vim.keymap.set("n", "<leader>J", "<cmd>lprev<CR>zz")
 -- Replace word under cursor -> send to command mode
 vim.keymap.set("n", "<leader>/", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 
--- Open netrw in current directory
-vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
-
 -- Make current file executable
 vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true })
 
@@ -202,9 +199,6 @@ local function renameLinkedFile()
     end
 end
 vim.keymap.set("n", "<leader>rR", renameLinkedFile)
-
--- Go to folder with -
-vim.keymap.set("n", "-", "<CMD>e %:h<CR>")
 
 -- Make mappings similar to TMUX mappings for Vim tabs
 vim.keymap.set("n", "<C-t>c", "<CMD>tabnew<CR>")
