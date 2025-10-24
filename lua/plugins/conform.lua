@@ -9,6 +9,7 @@ return {
                 lua = { "stylua" },
                 python = { "ruff_fix", "ruff_format" }, -- ruff
                 go = { "goimports", "gofmt" },
+                tex = { "tex-fmt" },
                 javascript = { "biome-check" },
                 typescript = { "biome-check" },
                 typescriptreact = { "biome-check" },
