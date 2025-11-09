@@ -5,7 +5,7 @@ return {
             -- Invoke special functions to parse list
             require("minuet").setup({
                 provider = "openai_compatible",
-                -- n_completions = 1, -- recommend for local model for resource saving
+                n_completions = 4,
                 -- I recommend beginning with a small context window size and incrementally
                 -- expanding it, depending on your local computing power. A context window
                 -- of 512, serves as an good starting point to estimate your computing
