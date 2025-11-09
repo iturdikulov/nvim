@@ -62,7 +62,6 @@ return {
                 },
             },
             sections = {
-                { section = "header" },
                 {
                     icon = " ",
                     title = "Keymaps",
