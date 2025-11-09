@@ -6,13 +6,14 @@ development workflow.
 ## Why?
 
 I found myself spending too much time configuring and context-switching between
-different tools. I wanted a single, cohesive environment that could handle
-everything from writing code to debugging, testing. While there are many great
-Neovim distributions, I wanted something that was tailored to my specific needs
-and preferences.
+different tools.
 
-This configuration is the result of that effort. It's a highly customized setup
-that integrates some of the best Neovim plugins available, with a focus on:
+I want to use fast and highly personalized development environment (PDE). This
+configuration is result of my journey to create it. I think it's 3 or 4
+iteration.
+
+So it's a highly customized setup that integrates some of the best Neovim
+plugins available, with a focus on:
 
 - **Efficient Workflow:** Fast fuzzy finding with Telescope, easy file
   navigation with Harpoon, and a streamlined UI with a custom statusline and
@@ -76,10 +77,11 @@ highlights:
 ### Development
 
 **LSP:** Language server protocol support for diagnostics, code actions, and
-  more:
-  - `K`: Show hover documentation.
-  - `gd`: Go to definition.
-  - `gr<key>`: Various LSP commands
+more:
+
+- `K`: Show hover documentation.
+- `gd`: Go to definition.
+- `gr<key>`: Various LSP commands
 
 - **Debugging:** Integrated debugging with `nvim-dap`.
   - `<F5>`: Continue.
