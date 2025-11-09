@@ -13,6 +13,7 @@ return {
                 javascript = { "biome-check" },
                 typescript = { "biome-check" },
                 typescriptreact = { "biome-check" },
+                php = { "mago_format" },
                 html = { "djlint" },
                 smarty = { "djlint" },
                 jsx = { "biome-check" },
