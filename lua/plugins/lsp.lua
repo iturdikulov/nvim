@@ -88,7 +88,11 @@ return {
         })
 
         -- LSP
-        local capabilities = require("cmp_nvim_lsp").default_capabilities()
+        local capabilities = vim.tbl_deep_extend("force",
+            vim.lsp.protocol.make_client_capabilities(),
+            require('cmp_nvim_lsp').default_capabilities()
+        )
+
         local base_config_lsp = {
             "clangd",
             "gdscript",
@@ -155,20 +159,132 @@ return {
         })
         vim.lsp.enable("texlab")
 
-        vim.lsp.config("basedpyright", {
-            capabilities = capabilities,
-            settings = {
-                basedpyright = {
-                    typeCheckingMode = "basic", -- off, basic, standard, strict, all
-                    analysis = {
-                        inlayHints = {
-                            callArgumentNames = false,
+        -- Extend capabilities to add dynamicRegistration
+        local basedpyrightCapabilities = vim.tbl_deep_extend("force", capabilities, {
+                textDocument = {
+                    publishDiagnostics = {
+                        tagSupport = {
+                            valueSet = { 2 }, -- Fix ruff duplicate reporting
                         },
                     },
                 },
-            },
+                workspace = {
+                    didChangeWatchedFiles = {
+                        dynamicRegistration = true,
+                    },
+                },
+            })
+
+            vim.lsp.config("basedpyright", {
+                capabilities = basedpyrightCapabilities,
+                settings = {
+                    basedpyright = {
+                        typeCheckingMode = "basic", -- off, basic, standard, strict, all
+                        analysis = {
+                            -- Disable some reporting, to avoid interference with ruff
+                            diagnosticSeverityOverrides = {
+                                reportFunctionMemberAccess = false,
+                                reportMissingImports = false,
+                                reportMissingModuleSource = false,
+                                reportImportCycles = false,
+                                reportUnusedImport = false,
+                                reportUnusedClass = false,
+                                reportUnusedFunction = false,
+                                reportUnusedVariable = false,
+                                reportDuplicateImport = false,
+                                reportWildcardImportFromLibrary = false,
+                                reportAbstractUsage = false,
+                                reportAttributeAccessIssue = false,
+                                reportCallIssue = false,
+                                reportInconsistentOverload = false,
+                                reportIndexIssue = false,
+                                reportNoOverloadImplementation = false,
+                                reportOperatorIssue = false,
+                                reportOptionalSubscript = false,
+                                reportOptionalMemberAccess = false,
+                                reportOptionalCall = false,
+                                reportOptionalIterable = false,
+                                reportOptionalContextManager = false,
+                                reportOptionalOperand = false,
+                                reportRedeclaration = false,
+                                reportPrivateUsage = false,
+                                reportPrivateImportUsage = false,
+                                reportConstantRedefinition = false,
+                                reportDeprecated = false,
+                                reportIncompatibleMethodOverride = false,
+                                reportIncompatibleVariableOverride = false,
+                                reportInconsistentConstructor = false,
+                                reportOverlappingOverload = false,
+                                reportPossiblyUnboundVariable = false,
+                                reportMissingSuperCall = false,
+                                reportUninitializedInstanceVariable = false,
+                                reportInvalidStringEscapeSequence = false,
+                                reportCallInDefaultInitializer = false,
+                                reportUnnecessaryIsInstance = false,
+                                reportUnnecessaryCast = false,
+                                reportUnnecessaryComparison = false,
+                                reportUnnecessaryContains = false,
+                                reportAssertAlwaysTrue = false,
+                                reportSelfClsParameterName = false,
+                                reportImplicitStringConcatenation = false,
+                                reportUndefinedVariable = false,
+                                reportUnboundVariable = false,
+                                reportUnhashable = false,
+                                reportUnsupportedDunderAll = false,
+                                reportUnusedCallResult = false,
+                                reportUnusedCoroutine = false,
+                                reportUnusedExcept = false,
+                                reportUnusedExpression = false,
+                                reportMatchNotExhaustive = false,
+                                reportImplicitOverride = false,
+                                reportShadowedImports = false,
+                            },
+                            inlayHints = {
+                                callArgumentNames = false,
+                            },
+                        },
+                        -- Disable, since I use ruff
+                        disableOrganizeImports = true,
+                    },
+                },
+            })
+            vim.lsp.enable("basedpyright")
+
+        -- Copy capabilities
+        local pylspCapabilities = vim.tbl_deep_extend("force", capabilities, {
+            textDocument = nil,
         })
-        vim.lsp.enable("basedpyright")
+
+        -- Disable some capabilities
+        --
+        --
+        -- k
+
+        pylspCapabilities["definitionProvider"] = false
+        vim.lsp.config('pylsp', {
+            capabilities = pylspCapabilities,
+            settings = {
+                pylsp = {
+                    disableDiagnostics = true,
+                    plugins = {
+                        autopep8 = { enabled = false },
+                        jedi_completion = { enabled = false },
+                        jedi_definition = { enabled = false },
+                        jedi_hover = { enabled = false },
+                        jedi_references = { enabled = false },
+                        jedi_signature_help = { enabled = false },
+                        jedi_symbols = { enabled = false },
+                        jedi_type_definition = { enabled = false },
+                        mccabe = { enabled = false },
+                        preload = { enabled = false },
+                        pycodestyle = { enabled = false },
+                        pyflakes = { enabled = false },
+                        yapf = { enabled = false },
+                    }
+                }
+            }
+        })
+        vim.lsp.enable("pylsp")
 
         vim.lsp.config("lua_ls", {
             capabilities = capabilities,
@@ -195,6 +311,7 @@ return {
 
         vim.lsp.config("emmet_language_server", {
             filetypes = {
+                "php",
                 "css",
                 "eruby",
                 "html",
