@@ -115,7 +115,44 @@ return {
         scope = { enabled = true },
         statuscolumn = { enabled = true },
         words = { enabled = true },
-        terminal = { enabled = false },
+        terminal = {
+            bo = {
+                filetype = "snacks_terminal",
+            },
+            wo = {},
+            stack = true, -- when enabled, multiple split windows with the same position will be stacked together (useful for terminals)
+            keys = {
+                q = "hide",
+                gf = function(self)
+                    local f = vim.fn.findfile(vim.fn.expand("<cfile>"), "**")
+                    if f == "" then
+                        Snacks.notify.warn("No file under cursor")
+                    else
+                        self:hide()
+                        vim.schedule(function()
+                            vim.cmd("e " .. f)
+                        end)
+                    end
+                end,
+                term_normal = {
+                    "<esc>",
+                    function(self)
+                        self.esc_timer = self.esc_timer
+                            or (vim.uv or vim.loop).new_timer()
+                        if self.esc_timer:is_active() then
+                            self.esc_timer:stop()
+                            vim.cmd("stopinsert")
+                        else
+                            self.esc_timer:start(200, 0, function() end)
+                            return "<esc>"
+                        end
+                    end,
+                    mode = "t",
+                    expr = true,
+                    desc = "Double escape to normal mode",
+                },
+            },
+        },
     },
     keys = {
         -- dashboard
@@ -199,6 +236,49 @@ return {
                 )
             end,
             desc = "Yadm",
+        },
+        {
+            "<leader>T",
+            function()
+                Snacks.terminal.toggle()
+            end,
+            desc = "Terminal",
+        },
+        {
+            -- Makefile Runner
+            "<leader>O",
+            function()
+                local targets = {}
+                local makefile = vim.fn.getcwd() .. "/Makefile"
+
+                if vim.uv.fs_stat(makefile) then
+                    local file = io.open(makefile, "r")
+                    if file then
+                        for line in file:lines() do
+                            if line:match("^[^# ]+") then
+                                local target = line:match("^([^:]+):$")
+                                if target and not target:match("%%") then
+                                    table.insert(targets, target)
+                                end
+                            end
+                        end
+                        file:close()
+                    end
+                end
+
+                if #targets > 0 then
+                    local menu = { "Select make target:" }
+                    for i, target in ipairs(targets) do
+                        table.insert(menu, string.format("%d. %s", i, target))
+                    end
+                    local choice = vim.fn.inputlist(menu)
+                    if choice > 0 and choice <= #targets then
+                        local target = targets[choice]
+                        Snacks.terminal.toggle("make " .. target)
+                    end
+                end
+            end,
+            desc = "Run Make Target",
         },
         {
             "<leader>gl",
