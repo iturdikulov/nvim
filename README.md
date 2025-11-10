@@ -39,6 +39,15 @@ plugins available, with a focus on:
    nvim
    ```
 
+## LSP and formatters setup
+
+I do not use any package managers inside Neovim (mason) to install LSP servers
+and tools binaries; this handled outside, with my OS package manager and other
+managers. If you want to use some LSP servers, required to install them
+manually.
+[There](https://github.com/iturdikulov/dev/blob/master/.config/yadm/runs/python)
+is example how I install them in Debian.
+
 ## Usage
 
 This configuration comes with a lot of features. Here are some of the
