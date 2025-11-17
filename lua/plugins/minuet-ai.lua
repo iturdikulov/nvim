@@ -4,15 +4,15 @@ return {
         config = function()
             -- Invoke special functions to parse list
             require("minuet").setup({
-                provider = "openai_compatible",
-                n_completions = 4,
+                provider = "gemini",
+                n_completions = 3,
                 -- I recommend beginning with a small context window size and incrementally
                 -- expanding it, depending on your local computing power. A context window
                 -- of 512, serves as an good starting point to estimate your computing
                 -- power. Once you have a reliable estimate of your local computing power,
                 -- -- you should adjust the context window to a larger value.
-                context_window = 10000,
-                request_timeout = 3,
+                context_window = 8012,
+                request_timeout = 4,
                 virtualtext = {
                     -- Specify the filetypes to enable automatic virtual text completion,
                     -- e.g., { 'python', 'lua' }. Note that you can still invoke manual
@@ -34,21 +34,8 @@ return {
                     show_on_completion_menu = true,
                 },
                 provider_options = {
-                    openai_compatible = {
-                        api_key = "OPENROUTER_API_KEY",
-                        end_point = "https://openrouter.ai/api/v1/chat/completions",
-                        model = "google/gemini-2.5-flash",
-                        name = "Openrouter",
-                        optional = {
-                            max_tokens = 56,
-                            top_p = 0.95,
-                            provider = {
-                                sort = "throughput", -- bias toward faster providers
-                            },
-                            reasoning = {
-                                enabled = false
-                            },
-                        },
+                    gimini = {
+                        model = "gemini-2.5-flash-lite",
                     },
                     openai_fim_compatible = {
                         -- For Windows users, TERM may not be present in environment variables.
