@@ -106,3 +106,10 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
   command = "if mode() != 'c' | checktime | endif",
   pattern = "*",
 })
+
+-- make Neovim’s jobs use a login+interactive Zsh
+local zsh = vim.fn.exepath("zsh")
+if zsh ~= "" then
+  vim.opt.shell = zsh
+  vim.opt.shellcmdflag = "-lic"
+end
