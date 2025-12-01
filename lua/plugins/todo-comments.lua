@@ -13,7 +13,7 @@ return {
                 NOW = { color = "warning" },
                 REPEAT = { color = "test" },
                 DONE = {
-                    color = "hint",
+                    color = "#8686AD",
                     alt = { "CLOSED", "FIXED" },
                 },
                 PROJECT = { color = "warning" },
