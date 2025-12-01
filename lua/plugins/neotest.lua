@@ -5,7 +5,9 @@ return {
 
         neotest.setup({
             adapters = {
-                require("neotest-python"),
+                require("neotest-python")({
+                    args = {"--log-level", "DEBUG", "--capture", "tee-sys"},
+                }),
             },
         })
 
