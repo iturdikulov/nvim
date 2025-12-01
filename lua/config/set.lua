@@ -69,8 +69,11 @@ vim.g.markdown_fenced_languages = {
     'tex',           'nix',             'nginx'
 }
 
--- Disable folding on opening
+-- Use treesitter folding
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
 vim.opt.foldlevelstart = 99
+vim.cmd([[ set nofoldenable]])
 
 -- Enable markdown folding (can be slow!)
 vim.g.markdown_folding = 1
