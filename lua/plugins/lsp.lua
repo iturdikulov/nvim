@@ -10,7 +10,19 @@ return {
         "L3MON4D3/LuaSnip",
         "saadparwaiz1/cmp_luasnip",
         "f3fora/cmp-spell",
-        "nanotee/sqls.nvim",
+        {
+            "nanotee/sqls.nvim",
+            ft = "sql",
+            keys = {
+                {
+                    "X",
+                    "<Plug>(sqls-execute-query)",
+                    mode = { "n", "x" },
+                    ft = "sql",
+                    desc = "Sqls Execute Query",
+                },
+            },
+        },
     },
 
     config = function()
@@ -63,6 +75,9 @@ return {
                 end,
             },
             mapping = cmp.mapping.preset.insert({
+                ['<C-b>'] = cmp.mapping.scroll_docs(-4),
+                ['<C-f>'] = cmp.mapping.scroll_docs(4),
+                ["<C-e>"] = cmp.mapping.abort(),
                 ["<C-p>"] = cmp.mapping.select_prev_item(cmp_select),
                 ["<C-n>"] = cmp.mapping.select_next_item(cmp_select),
 
@@ -467,7 +482,21 @@ return {
                 end
 
                 -- Custom LSP mappings
-                map("K", vim.lsp.buf.hover, "show hover documentation")
+                map("K", function()
+                    local base_win_id = vim.api.nvim_get_current_win()
+                    local windows = vim.api.nvim_tabpage_list_wins(0)
+                    for _, win_id in ipairs(windows) do
+                        if win_id ~= base_win_id then
+                            local win_cfg = vim.api.nvim_win_get_config(win_id)
+                            if win_cfg.relative == "win" and win_cfg.win == base_win_id then
+                                vim.api.nvim_win_close(win_id, {})
+                                return
+                            end
+                        end
+                    end
+                    vim.lsp.buf.hover()
+                end, "toggle hover")
+
                 map("gd", vim.lsp.buf.definition, "show definitions")
                 map("go", vim.lsp.buf.workspace_symbol, "workspace symbol")
                 map("gl", vim.diagnostic.open_float, "open diagnostic")
