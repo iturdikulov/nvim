@@ -157,8 +157,13 @@ return {
                 minimal = true,
                 width = 80,
                 wo = {
-                    wrap = true
+                    wrap = true,
                 },
+            },
+        },
+        zen = {
+            toggles = {
+                dim = false,
             },
         },
     },
