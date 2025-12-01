@@ -1,3 +1,6 @@
+ENV
+PostgreSQL
+WSGI
 aarhus
 aaron
 ababa
@@ -2205,6 +2208,7 @@ aphonic
 aphorism
 aphorisms
 aphrodite
+api
 apiaries
 apiary
 apical
@@ -2568,6 +2572,7 @@ argonauts
 argonne
 argos
 argot
+args
 arguable
 arguably
 argue
@@ -2850,6 +2855,7 @@ askew
 asking
 asks
 asleep
+asm
 asocial
 asp
 asparagus
@@ -3374,6 +3380,7 @@ autobiographic
 autobiographical
 autobiographies
 autobiography
+autocmd
 autocode
 autocollimator
 autocommand
@@ -4083,6 +4090,7 @@ baseband
 baseboard
 baseboards
 based
+basedpyright
 basel
 baseless
 baseline
@@ -4100,6 +4108,7 @@ bashes
 bashful
 bashfulness
 bashing
+bashls
 basic
 basically
 basics
@@ -8355,6 +8364,7 @@ civilized
 civilizes
 civilizing
 civilly
+cjk
 clad
 cladding
 claim
@@ -8385,6 +8395,7 @@ clams
 clan
 clandestine
 clang
+clangd
 clanged
 clanging
 clangs
@@ -8690,6 +8701,7 @@ cluttering
 clutters
 clyde
 clytemnestra
+cmdline
 cmp
 cmus
 coach
@@ -9570,6 +9582,7 @@ confidently
 confides
 confiding
 confidingly
+config
 configurable
 configuration
 configurations
@@ -12228,6 +12241,7 @@ derrick
 derriere
 dervish
 des
+desc
 descartes
 descend
 descendant
@@ -13409,6 +13423,7 @@ docile
 dock
 docked
 dockerhub
+dockerls
 docket
 docks
 dockside
@@ -17138,6 +17153,7 @@ flyer
 flyers
 flying
 flynn
+fn
 foal
 foam
 foamed
@@ -17767,6 +17783,7 @@ front
 frontage
 frontal
 fronted
+frontend
 frontier
 frontiers
 frontiersman
@@ -18194,6 +18211,7 @@ gazes
 gazette
 gazing
 gdb
+gdscript
 gear
 geared
 gearing
@@ -18354,6 +18372,7 @@ gestures
 gesturing
 get
 getaway
+getcwd
 gets
 getter
 getters
@@ -18714,6 +18733,7 @@ goofs
 goofy
 goose
 gopher
+gopls
 gordian
 gordon
 gore
@@ -23059,6 +23079,7 @@ jimmie
 jingle
 jingled
 jingling
+jinja
 jinny
 jitter
 jitterbug
@@ -24993,6 +25014,8 @@ loyally
 loyalties
 loyalty
 loyola
+lsp
+lspconfig
 lsyncd
 ltex
 lua
@@ -32810,6 +32833,7 @@ puzzling
 puzzlings
 pycharm
 pydantic
+pydevd
 pyenv
 pyfiglet
 pygmalion
@@ -35707,6 +35731,7 @@ royalties
 royalty
 royce
 rozelle
+ru
 ruanda
 rub
 rubaiyat
@@ -38908,8 +38933,11 @@ spellbound
 spelled
 speller
 spellers
+spellfile
 spelling
 spellings
+spelllang
+spelloptions
 spells
 spencer
 spencerian
@@ -41594,6 +41622,7 @@ texan
 texans
 texas
 texases
+texlab
 text
 textbook
 textbooks
@@ -43789,6 +43818,7 @@ usurper
 utah
 utensil
 utensils
+utf
 utica
 utilities
 utility
@@ -44264,6 +44294,7 @@ villainousness
 villains
 villainy
 villas
+vim
 vim-dadbod-ui
 vimdiff
 vimgolf
@@ -44818,6 +44849,7 @@ web
 webb
 webber
 webs
+websocket
 webster
 websterville
 wedded
@@ -45623,6 +45655,7 @@ yale
 yalies
 yalta
 yamaha
+yamlls
 yank
 yanked
 yankee
@@ -45810,36 +45843,3 @@ zsh
 zulu
 zulus
 zurich
-api
-spelllang
-spelloptions
-cjk
-spellfile
-getcwd
-fn
-vim
-utf
-ru
-autocmd
-args
-config
-desc
-WSGI
-pydevd
-ENV
-jinja
-clangd
-gdscript
-texlab
-yamlls
-dockerls
-asm
-bashls
-gopls
-basedpyright
-lspconfig
-return
-return
-config
-cmdline
-lsp
