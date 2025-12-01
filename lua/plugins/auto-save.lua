@@ -30,7 +30,7 @@ return {
                 if
                     fn.getbufvar(buf, "&modifiable") == 1
                     and utils.not_in(fn.getbufvar(buf, "&filetype"), {})
-                    and fn.expand("%:t"):match("TODO")
+                    and (fn.expand("%:t"):match("TODO") or fn.expand("%:t"):match("QuickNote"))
                 then
                     return true -- met condition(s), can save
                 end
