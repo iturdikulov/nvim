@@ -1,4 +1,5 @@
 vim.opt.colorcolumn = "80"
+vim.opt.textwidth = 0
 vim.opt.termguicolors = true
 
 vim.opt.nu = true
@@ -14,8 +15,6 @@ vim.opt.showmode = false
 vim.opt.smartindent = true
 
 -- Wrapping
-vim.opt.linebreak = true
-vim.opt.breakindent = true
 vim.opt.breakindentopt = { "shift:0" }
 vim.opt.showbreak = "↳ "
 
@@ -63,7 +62,7 @@ vim.g.markdown_fenced_languages = {
     'rb=ruby',       'ruby',            'go',
     'lua',           'bash=sh',         'java',
     'javascript',    'js=javascript',   'json=javascript',
-    "ts=typescript",
+    "tsx=typescript", "ts=typescript",
     'typescript',    'html',            'css',
     'scss',          'yaml',            'toml',
     'tex',           'nix',             'nginx'
