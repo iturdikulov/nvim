@@ -18,20 +18,20 @@ return {
             vim.keymap.set("n", lhs, rhs, { silent = true, desc = desc })
         end
 
-        map("<m-h><m-a>", function()
-            harpoon:list():add()
-        end, "Add File")
-
-        map("<m-h><m-h>", function()
+        map("<C-M-l>", function()
             harpoon.ui:toggle_quick_menu(harpoon:list())
         end, "Open harpoon UI")
 
-        -- Set <space>1..<space>5 be my shortcuts to moving to the files
-        for _, idx in ipairs { 1, 2, 3, 4, 5 } do
-          vim.keymap.set("n", string.format("<space>%d", idx), function()
-            harpoon:list():select(idx)
-          end)
-        end
+        map("<C-M-h>", function()
+            harpoon:list():add()
+            local file = vim.fn.expand("%:t")
+            vim.notify("Added " .. file .. " to harpoon")
+        end, "Add File")
+
+        -- vim.keymap.set("n", "<C-l>", function() harpoon:list():select(1) end)
+        -- vim.keymap.set("n", "<C-h>", function() harpoon:list():select(2) end)
+        -- vim.keymap.set("n", "<C-j>", function() harpoon:list():select(3) end)
+        -- vim.keymap.set("n", "<C-k>", function() harpoon:list():select(4) end)
 
         -- Toggle previous & next buffers stored within Harpoon list
         map("<C-M-P>", function()
