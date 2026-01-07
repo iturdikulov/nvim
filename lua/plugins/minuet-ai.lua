@@ -4,7 +4,7 @@ return {
         config = function()
             -- Invoke special functions to parse list
             require("minuet").setup({
-                provider = "gemini",
+                provider = "codestral",
                 n_completions = 3,
                 -- I recommend beginning with a small context window size and incrementally
                 -- expanding it, depending on your local computing power. A context window
@@ -12,7 +12,7 @@ return {
                 -- power. Once you have a reliable estimate of your local computing power,
                 -- -- you should adjust the context window to a larger value.
                 context_window = 8012,
-                request_timeout = 4,
+                request_timeout = 8,
                 virtualtext = {
                     -- Specify the filetypes to enable automatic virtual text completion,
                     -- e.g., { 'python', 'lua' }. Note that you can still invoke manual
@@ -21,6 +21,7 @@ return {
                     keymap = {
                         -- accept whole completion
                         accept = "<A-y>",
+                        accept_line = "<A-Y>",
                         -- accept n lines (prompts for number)
                         -- e.g. "A-z 2 CR" will accept 2 lines
                         accept_n_lines = "<A-v>",
@@ -34,20 +35,29 @@ return {
                     show_on_completion_menu = true,
                 },
                 provider_options = {
-                    gimini = {
-                        model = "gemini-2.5-flash-lite",
+                    gemini = {
+                        model = "gemini-2.5-flash-lite-preview-09-2025",
+                        optional = {
+                            max_tokens = 255,
+                        },
                     },
-                    openai_fim_compatible = {
+                    codestral = {
+                        optional = {
+                            max_tokens = 256,
+                            stop = { "\n\n" },
+                        },
+                    },
+                    compatible = {
                         -- For Windows users, TERM may not be present in environment variables.
                         -- Consider using APPDATA instead.
                         --
                         api_key = "TERM",
                         name = "Ollama",
-                        end_point = "http://localhost:11434/v1/completions",
-                        model = "Qwen2.5-coder:14b",
+                        end_point = "http://localhost:11434/v1/chat/completions",
+                        model = "gpt-oss:latest",
                         optional = {
-                            max_tokens = 56,
-                            top_p = 0.9,
+                            max_completion_tokens = 128,
+                            reasoning_effort = "low",
                         },
                     },
                 },
