@@ -92,13 +92,10 @@ vim.keymap.set(
 -- Make current file executable
 vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true })
 
--- Launch script using $TERMINAL
-vim.keymap.set("n", "<leader>o", "<cmd>!$TERMINAL %<CR>", { silent = true })
-
 -- Open file in external program (xdg-open)
 vim.keymap.set(
     "n",
-    "<leader>O",
+    "<leader>o",
     "<cmd>!xdg-open %<CR>",
     { silent = true, desc = "Open current file with xdg-open" }
 )
