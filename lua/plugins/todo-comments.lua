@@ -1,7 +1,6 @@
 return {
     "folke/todo-comments.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
-    event = "VimEnter",
     config = function()
         require("todo-comments").setup({
             signs = false,
@@ -9,17 +8,19 @@ return {
                 comments_only = false, -- uses treesitter to match keywords in comments only
                 exclude = {}, -- list of file types to exclude highlighting
             },
+            --        -- Colors from https://rosepinetheme.com/palette/ingredients/
             keywords = {
-                NOW = { color = "warning" },
-                REPEAT = { color = "test" },
                 DONE = {
-                    color = "#8686AD",
+                    color = "#908caa",
                     alt = { "CLOSED", "FIXED" },
                 },
+                WAITING = { color = "#31748f" },
+                DELEGATED = { color = "error" },
+                CANCELED = { color = "#403d52" },
+                REPEAT = { color = "#ebbcba" },
                 PROJECT = { color = "warning" },
             },
         })
-
         vim.keymap.set("n", "]t", function()
             require("todo-comments").jump_next({
                 keywords = { "ERROR", "WARNING", "WARN" },
@@ -41,21 +42,94 @@ return {
             { desc = "Show todo list" }
         )
 
-        vim.keymap.set("n", "<leader>td", function()
-            -- Get the current line
-            local current_line = vim.fn.getline(".")
-            -- Get the current line number
-            local line_number = vim.fn.line(".")
-            if string.find(current_line, "TODO:") then
-                local new_line = current_line:gsub("TODO:", "DONE:")
-                vim.fn.setline(line_number, new_line)
-            elseif string.find(current_line, "DONE:") then
-                local new_line = current_line:gsub("DONE:", "TODO:")
-                vim.fn.setline(line_number, new_line)
-            else
-                vim.fn.setline(line_number, "- TODO: " .. current_line)
+        local function toggle_todo_line(line)
+            -- GUARD: Ignore empty lines or lines with only whitespace
+            if line:match("^%s*$") then
+                return line
             end
-        end, { desc = "Toggle task done or not" })
+
+            -- GUARD: If line starts with "- UPPERCASE_WORD" (and it's NOT TODO or DONE)
+            -- This pattern looks for a dash followed by 1+ uppercase letters
+            local _, upper_word = line:match("^(%s*%-%s*)(%w+)")
+            if
+                upper_word
+                and upper_word ~= "TODO"
+                and upper_word ~= "DONE"
+                and (
+                    upper_word == upper_word:upper()
+                    and not tonumber(upper_word)
+                )
+            then
+                -- verify upper_word isn't number
+                return line
+            end
+
+            local new_line = line
+
+            --  Toggle Checkboxes: - [ ] <-> - [x]
+            if line:match("^%s*%- %[ %]") then
+                new_line = line:gsub("^(%s*)%- %[ %]", "%1- [x]", 1)
+            elseif line:match("^%s*%- %[x%]") then
+                new_line = line:gsub("^(%s)*%- %[x%]", "%1- [ ]", 1)
+
+            -- Toggle Keywords: - TODO: <-> - DONE:
+            elseif line:match("^%s*%- TODO:") then
+                new_line = line:gsub("^(%s*)%- TODO:", "%1- DONE:", 1)
+            elseif line:match("^%s*%- DONE:") then
+                new_line = line:gsub("^(%s*)%- DONE:", "%1- TODO:", 1)
+
+            -- If line doesn't start with "-", add "- TODO: "
+            elseif not line:match("^%s*%-") then
+                new_line = line:gsub("^(%s*)(.*)", "%1- TODO: %2", 1)
+            -- If line starts with "-" but has no marker, add "TODO:"
+            else
+                new_line = line:gsub("^(%s*%-)%s*", "%1 TODO: ", 1)
+            end
+
+            vim.api.nvim_set_current_line(new_line)
+
+            return new_line
+        end
+
+        vim.keymap.set({ "n", "v" }, "<leader>td", function()
+            local mode = vim.api.nvim_get_mode().mode
+            local start_line, end_line
+
+            if mode:match("[vV]") then
+                start_line = vim.fn.line("v")
+                end_line = vim.fn.line(".")
+                if start_line > end_line then
+                    start_line, end_line = end_line, start_line
+                end
+            else
+                start_line = vim.api.nvim_win_get_cursor(0)[1]
+                end_line = start_line
+            end
+
+            local lines =
+                vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+            local updated_lines = {}
+
+            for _, line in ipairs(lines) do
+                table.insert(updated_lines, toggle_todo_line(line))
+            end
+
+            vim.api.nvim_buf_set_lines(
+                0,
+                start_line - 1,
+                end_line,
+                false,
+                updated_lines
+            )
+
+            if mode:match("[vV]") then
+                vim.api.nvim_feedkeys(
+                    vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
+                    "n",
+                    true
+                )
+            end
+        end, { desc = "Toggle TODO item(s)" })
 
         vim.keymap.set("n", "<leader>tD", function()
             local buf = vim.api.nvim_get_current_buf()
