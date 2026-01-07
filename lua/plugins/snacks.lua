@@ -158,6 +158,7 @@ return {
                 width = 80,
                 wo = {
                     wrap = true,
+                    linebreak = true
                 },
             },
         },
@@ -259,7 +260,7 @@ return {
         },
         {
             -- Makefile Runner
-            "<leader>O",
+            "<leader>o",
             function()
                 local targets = {}
                 local makefile = vim.fn.getcwd() .. "/Makefile"
@@ -328,16 +329,6 @@ return {
         },
     },
     init = function()
-        vim.api.nvim_create_autocmd("VimEnter", {
-            pattern = { "QuickNote.md", "Todo.md", "Journal.md" },
-            callback = function()
-                -- Enable zen mode
-                if pcall(require, "snacks") then
-                    require("snacks").zen()
-                end
-            end,
-        })
-
         vim.api.nvim_create_autocmd("User", {
             pattern = "VeryLazy",
             callback = function()
