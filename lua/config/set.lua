@@ -9,7 +9,7 @@ vim.opt.tabstop = 4
 vim.opt.softtabstop = 4
 vim.opt.shiftwidth = 4
 vim.opt.expandtab = true
-vim.opt.formatoptions:remove { "t" }
+vim.opt.formatoptions:remove({ "t" })
 
 vim.opt.showmode = false
 vim.opt.smartindent = true
@@ -30,7 +30,7 @@ vim.opt.ignorecase = true
 vim.opt.smartcase = true
 
 -- Preview substitutions live and higlight only when searching
-vim.opt.inccommand = 'split'
+vim.opt.inccommand = "split"
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
 
@@ -47,25 +47,48 @@ vim.wo.listchars = "tab:>-,extends:>,precedes:<,nbsp:␣"
 vim.opt.splitright = true
 
 -- Custom highlighting in diff mode
-vim.opt.diffopt:append { 'linematch:50' }
+vim.opt.diffopt:append({ "linematch:50" })
 
 -- Open diff in vertical split
-vim.opt.diffopt:append { 'vertical' }
+vim.opt.diffopt:append({ "vertical" })
 
 -- Enable syntax highlight in code blocks
 vim.g.markdown_fenced_languages = {
-    'asm',           'pascal',          'perl',
-    'lisp',          'python',          'cpp',
-    'py=python',
-    'javascript',    'php',             'java',
-    'rust',          'php',             'sql',
-    'rb=ruby',       'ruby',            'go',
-    'lua',           'bash=sh',         'java',
-    'javascript',    'js=javascript',   'json=javascript',
-    "tsx=typescript", "ts=typescript",
-    'typescript',    'html',            'css',
-    'scss',          'yaml',            'toml',
-    'tex',           'nix',             'nginx'
+    "asm",
+    "pascal",
+    "perl",
+    "lisp",
+    "python",
+    "cpp",
+    "py=python",
+    "javascript",
+    "php",
+    "java",
+    "rust",
+    "php",
+    "sql",
+    "rb=ruby",
+    "ruby",
+    "go",
+    "lua",
+    "bash=sh",
+    "java",
+    "javascript",
+    "js=javascript",
+    "json=javascript",
+    "tsx=typescript",
+    "ts=typescript",
+    "vue",
+    "gdscript",
+    "typescript",
+    "html",
+    "css",
+    "scss",
+    "yaml",
+    "toml",
+    "tex",
+    "nix",
+    "nginx",
 }
 
 -- Use treesitter folding
@@ -85,7 +108,7 @@ vim.opt.titlestring = "%{expand('%:p:h:t')}"
 vim.g.nerw_keepdir = 0 --  avoid the move files error.
 vim.g.netrw_browse_split = 0
 vim.g.netrw_winsize = 25
-vim.g.netrw_localcopydircmd = 'cp -r' -- fix netrw recursive dir copy
+vim.g.netrw_localcopydircmd = "cp -r" -- fix netrw recursive dir copy
 
 -- Cursorline highlighting control
 --  Only have it on in the active buffer
@@ -95,7 +118,9 @@ local set_cursorline = function(event, value, pattern)
     vim.api.nvim_create_autocmd(event, {
         group = group,
         pattern = pattern,
-        callback = function() vim.opt_local.cursorline = value end
+        callback = function()
+            vim.opt_local.cursorline = value
+        end,
     })
 end
 set_cursorline("WinLeave", false)
@@ -105,13 +130,29 @@ set_cursorline("FileType", false, "TelescopePrompt")
 -- Enable autoread and set up checking triggers
 vim.o.autoread = true
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
-  command = "if mode() != 'c' | checktime | endif",
-  pattern = "*",
+    command = "if mode() != 'c' | checktime | endif",
+    pattern = "*",
+})
+
+-- Remember cursor position
+local lastplace = vim.api.nvim_create_augroup("LastPlace", {})
+vim.api.nvim_clear_autocmds({ group = lastplace })
+vim.api.nvim_create_autocmd("BufReadPost", {
+    group = lastplace,
+    pattern = { "*" },
+    desc = "remember last cursor place",
+    callback = function()
+        local mark = vim.api.nvim_buf_get_mark(0, '"')
+        local lcount = vim.api.nvim_buf_line_count(0)
+        if mark[1] > 0 and mark[1] <= lcount then
+            pcall(vim.api.nvim_win_set_cursor, 0, mark)
+        end
+    end,
 })
 
 -- make Neovim’s jobs use a login+interactive Zsh
 local zsh = vim.fn.exepath("zsh")
 if zsh ~= "" then
-  vim.opt.shell = zsh
-  vim.opt.shellcmdflag = "-lic"
+    vim.opt.shell = zsh
+    vim.opt.shellcmdflag = "-lic"
 end
