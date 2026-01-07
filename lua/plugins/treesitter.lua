@@ -10,20 +10,37 @@ return {
         require("nvim-treesitter.configs").setup({
             -- Add languages to be installed here that you want installed for treesitter
             ensure_installed = {
+                "comment",
+                "bash",
                 "c",
                 "cpp",
+                "dockerfile",
+                "git_config",
+                "git_rebase",
+                "gitattributes",
+                "gitcommit",
+                "gitignore",
                 "go",
+                "gdscript",
                 "javascript",
+                "json",
+                "jsonc",
                 "lua",
+                "make",
                 "markdown",
                 "markdown_inline",
                 "python",
                 "query",
+                "regex",
                 "rust",
+                "toml",
                 "tsx",
                 "typescript",
                 "vim",
+                "vue",
                 "vimdoc",
+                "yaml",
+                "zig",
             },
 
             incremental_selection = {
@@ -60,6 +77,9 @@ return {
                             query_group = "locals",
                             desc = "Select language scope",
                         },
+                        -- Fence blocks
+                        ["iq"] = "@code_fence.content",
+                        ["aq"] = "@code_fence.outer",
                     },
                 },
                 move = {
