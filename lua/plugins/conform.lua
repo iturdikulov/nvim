@@ -1,10 +1,25 @@
 return {
     "stevearc/conform.nvim",
+    init = function()
+        vim.o.formatexpr = [[v:lua.require("conform").formatexpr()]]
+    end,
     opts = {},
     config = function()
         local conform = require("conform")
-
         conform.setup({
+            formatters = {
+                deno_fmt = {
+                    append_args = {
+                        "--indent-width",
+                        "4",
+                        "--prose-wrap",
+                        "never",
+                    },
+                },
+                sqlfluff = {
+                    args = { "format", "--dialect=postgres", "-" },
+                },
+            },
             formatters_by_ft = {
                 lua = { "stylua" },
                 python = { "ruff_fix", "ruff_format" }, -- ruff
@@ -34,10 +49,6 @@ return {
                 lsp_fallback = true,
             })
         end
-
-        vim.keymap.set({ "x" }, "<leader>=", function()
-            conform_format()
-        end, { silent = true, desc = "[Conform] format" })
 
         vim.keymap.set({ "n" }, "<leader>=", function()
             vim.ui.input({
