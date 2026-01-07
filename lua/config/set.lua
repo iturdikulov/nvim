@@ -127,6 +127,17 @@ set_cursorline("WinLeave", false)
 set_cursorline("WinEnter", true)
 set_cursorline("FileType", false, "TelescopePrompt")
 
+-- Hide line numbers and signs for specific files
+vim.api.nvim_create_autocmd("VimEnter", {
+    pattern = { "QuickNote.md", "keyboard_shortcut.md", "TODO.md" },
+    callback = function()
+        -- Hide line numbers and signs
+        vim.opt.number = false
+        vim.opt.relativenumber = false
+        vim.opt.signcolumn = "no"
+    end,
+})
+
 -- Enable autoread and set up checking triggers
 vim.o.autoread = true
 vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
