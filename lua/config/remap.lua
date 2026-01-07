@@ -95,7 +95,7 @@ vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true })
 -- Open file in external program (xdg-open)
 vim.keymap.set(
     "n",
-    "<leader>o",
+    "<leader>O",
     "<cmd>!xdg-open %<CR>",
     { silent = true, desc = "Open current file with xdg-open" }
 )
