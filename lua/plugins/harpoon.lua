@@ -28,10 +28,10 @@ return {
             vim.notify("Added " .. file .. " to harpoon")
         end, "Add File")
 
-        -- vim.keymap.set("n", "<C-l>", function() harpoon:list():select(1) end)
-        -- vim.keymap.set("n", "<C-h>", function() harpoon:list():select(2) end)
-        -- vim.keymap.set("n", "<C-j>", function() harpoon:list():select(3) end)
-        -- vim.keymap.set("n", "<C-k>", function() harpoon:list():select(4) end)
+        vim.keymap.set("n", "<C-l>", function() harpoon:list():select(1) end)
+        vim.keymap.set("n", "<C-h>", function() harpoon:list():select(2) end)
+        vim.keymap.set("n", "<C-j>", function() harpoon:list():select(3) end)
+        vim.keymap.set("n", "<C-k>", function() harpoon:list():select(4) end)
 
         -- Toggle previous & next buffers stored within Harpoon list
         map("<C-M-P>", function()
