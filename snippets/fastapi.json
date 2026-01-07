@@ -1,0 +1,635 @@
+{
+  "FastAPI App Instance": {
+    "prefix": "fastapp",
+    "body": [
+      "from fastapi import FastAPI",
+      "",
+      "app = FastAPI(",
+      "    title=\"${1:My Super API}\",",
+      "    description=\"${2:A modern, high-performance API built with FastAPI.}\",",
+      "    version=\"${3:1.0.0}\",",
+      "    contact={",
+      "        \"name\": \"${4:API Support}\",",
+      "        \"url\": \"${5:http://example.com/contact}\",",
+      "        \"email\": \"${6:support@example.com}\",",
+      "    },",
+      "    license_info={",
+      "        \"name\": \"${7:Apache 2.0}\",",
+      "        \"url\": \"${8:https://www.apache.org/licenses/LICENSE-2.0.html}\",",
+      "    },",
+      "    docs_url=\"/docs\",",
+      "    redoc_url=\"/redoc\"",
+      ")"
+    ],
+    "description": "Creates a new FastAPI application instance with rich metadata."
+  },
+
+  "APIRouter Instance": {
+    "prefix": "fastrouter",
+    "body": [
+      "from fastapi import APIRouter",
+      "",
+      "router = APIRouter(",
+      "    prefix=\"/${1:prefix}\",",
+      "    tags=[\"${2:TagName}\"],",
+      "    responses={404: {\"description\": \"Not found\"}}",
+      ")"
+    ],
+    "description": "Creates a new APIRouter for modular endpoint organization."
+  },
+
+  "Pydantic Model (v2)": {
+    "prefix": "fastmodel",
+    "body": [
+      "from pydantic import BaseModel, Field, EmailStr, model_validator",
+      "from typing import List, Optional",
+      "",
+      "class ${1:MyModel}(BaseModel):",
+      "    id: int",
+      "    name: str = Field(..., min_length=3, max_length=50, example=\"John Doe\")",
+      "    email: EmailStr",
+      "    is_active: Optional[bool] = True",
+      "",
+      "    model_config = {",
+      "        \"json_schema_extra\": {",
+      "            \"examples\": [",
+      "                {",
+      "                    \"id\": 1,",
+      "                    \"name\": \"Jane Doe\",",
+      "                    \"email\": \"jane.doe@example.com\",",
+      "                    \"is_active\": True,",
+      "                }",
+      "            ]",
+      "        }",
+      "    }"
+    ],
+    "description": "Defines a Pydantic model with modern validation and schema examples (Pydantic v2)."
+  },
+
+  "GET Endpoint": {
+    "prefix": "fastget",
+    "body": [
+      "from typing import Annotated",
+      "from fastapi import Depends, Query, Path, HTTPException",
+      "",
+      "@router.get(\"/${1:items}/{item_id}\", response_model=${2:Item}, summary=\"${3:Get a single item}\")",
+      "async def get_item(",
+      "    item_id: Annotated[int, Path(title=\"The ID of the item to get\", gt=0)],",
+      "    current_user: Annotated[${4:User}, Depends(${5:get_current_user})]",
+      "):",
+      "    \"\"\"Fetches an item by its ID from the database.\"\"\"",
+      "    item = ${6:db_get_item(item_id=item_id)}",
+      "    if not item:",
+      "        raise HTTPException(status_code=404, detail=\"Item not found\")",
+      "    return item"
+    ],
+    "description": "Defines a GET endpoint with path variables, dependencies, and response model."
+  },
+
+  "POST Endpoint": {
+    "prefix": "fastpost",
+    "body": [
+      "from typing import Annotated",
+      "from fastapi import Depends, status, BackgroundTasks",
+      "",
+      "@router.post(\"/${1:items}/\", response_model=${2:Item}, status_code=status.HTTP_201_CREATED)",
+      "async def create_item(",
+      "    item: ${3:ItemCreate},",
+      "    background_tasks: BackgroundTasks,",
+      "    current_user: Annotated[${4:User}, Depends(${5:get_current_user})]",
+      "):",
+      "    \"\"\"Creates a new item and adds a background task.\"\"\"",
+      "    new_item = ${6:db_create_item(item=item)}",
+      "    background_tasks.add_task(${7:send_notification}, new_item.id, \"Item created\")",
+      "    return new_item"
+    ],
+    "description": "Defines a POST endpoint with a request body, background tasks, and a 201 status code."
+  },
+
+  "Generic CRUD Router": {
+    "prefix": "fastcrud",
+    "body": [
+      "from typing import List, Type, Annotated",
+      "from fastapi import APIRouter, Depends, HTTPException",
+      "from sqlalchemy.orm import Session",
+      "from pydantic import BaseModel",
+      "",
+      "def create_crud_router(",
+      "    *,",
+      "    prefix: str,",
+      "    tags: List[str],",
+      "    db_session: Session,",
+      "    db_model: Type[Base],",
+      "    schema_read: Type[BaseModel],",
+      "    schema_create: Type[BaseModel],",
+      "    schema_update: Type[BaseModel]",
+      ") -> APIRouter:",
+      "    router = APIRouter(prefix=prefix, tags=tags)",
+      "",
+      "    @router.post(\"/\", response_model=schema_read, status_code=201)",
+      "    def create_item(item: schema_create, db: Annotated[Session, Depends(db_session)]):",
+      "        db_item = db_model(**item.dict())",
+      "        db.add(db_item)",
+      "        db.commit()",
+      "        db.refresh(db_item)",
+      "        return db_item",
+      "",
+      "    @router.get(\"/{item_id}\", response_model=schema_read)",
+      "    def read_item(item_id: int, db: Annotated[Session, Depends(db_session)]):",
+      "        db_item = db.query(db_model).get(item_id)",
+      "        if not db_item:",
+      "            raise HTTPException(status_code=404, detail=\"Item not found\")",
+      "        return db_item",
+      "",
+      "    return router"
+    ],
+    "description": "Creates a generic CRUD router for a SQLAlchemy model."
+  },
+
+  "Streaming Response": {
+    "prefix": "faststream",
+    "body": [
+      "from fastapi.responses import StreamingResponse",
+      "import asyncio",
+      "",
+      "async def fake_video_streamer():",
+      "    for i in range(10):",
+      "        yield b\"some fake video data\\n\"",
+      "        await asyncio.sleep(0.1)",
+      "",
+      "@app.get(\"/video\")",
+      "async def stream_video():",
+      "    return StreamingResponse(fake_video_streamer(), media_type=\"video/mp4\")"
+    ],
+    "description": "Defines an endpoint that streams data, e.g., for large files or live data."
+  },
+
+  "Pydantic Settings": {
+    "prefix": "fastsettings",
+    "body": [
+      "from pydantic_settings import BaseSettings, SettingsConfigDict",
+      "",
+      "class Settings(BaseSettings):",
+      "    app_name: str = \"Awesome API\"",
+      "    database_url: str",
+      "    secret_key: str",
+      "",
+      "    model_config = SettingsConfigDict(env_file=\".env\")",
+      "",
+      "settings = Settings()"
+    ],
+    "description": "Manages application configuration using Pydantic's BaseSettings for env variables."
+  },
+
+  "JWT Security Setup": {
+    "prefix": "fastsecurity",
+    "body": [
+      "from datetime import datetime, timedelta, timezone",
+      "from typing import Annotated",
+      "from fastapi import Depends, HTTPException, status",
+      "from fastapi.security import OAuth2PasswordBearer",
+      "from jose import JWTError, jwt",
+      "from passlib.context import CryptContext",
+      "",
+      "SECRET_KEY = \"${1:your_super_secret_key}\"",
+      "ALGORITHM = \"HS256\"",
+      "ACCESS_TOKEN_EXPIRE_MINUTES = ${2:30}",
+      "",
+      "pwd_context = CryptContext(schemes=[\"bcrypt\"], deprecated=\"auto\")",
+      "oauth2_scheme = OAuth2PasswordBearer(tokenUrl=\"${3:token}\")",
+      "",
+      "def create_access_token(data: dict, expires_delta: timedelta | None = None):",
+      "    to_encode = data.copy()",
+      "    if expires_delta:",
+      "        expire = datetime.now(timezone.utc) + expires_delta",
+      "    else:",
+      "        expire = datetime.now(timezone.utc) + timedelta(minutes=15)",
+      "    to_encode.update({\"exp\": expire})",
+      "    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)",
+      "",
+      "async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):",
+      "    credentials_exception = HTTPException(",
+      "        status_code=status.HTTP_401_UNAUTHORIZED,",
+      "        detail=\"Could not validate credentials\",",
+      "        headers={\"WWW-Authenticate\": \"Bearer\"},",
+      "    )",
+      "    try:",
+      "        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])",
+      "        username: str = payload.get(\"sub\")",
+      "        if username is None:",
+      "            raise credentials_exception",
+      "        # token_data = TokenData(username=username) # Optional: Use a Pydantic model for payload",
+      "    except JWTError:",
+      "        raise credentials_exception",
+      "    # user = get_user(db, username=token_data.username) # Fetch user from DB",
+      "    # if user is None:",
+      "    #     raise credentials_exception",
+      "    return username # Replace with user object"
+    ],
+    "description": "Sets up JWT authentication with token creation and user dependency."
+  },
+
+  "Database Dependency": {
+    "prefix": "fastdep",
+    "body": [
+      "from sqlalchemy.orm import Session",
+      "from .database import SessionLocal",
+      "",
+      "def get_db():",
+      "    db = SessionLocal()",
+      "    try:",
+      "        yield db",
+      "    finally:",
+      "        db.close()"
+    ],
+    "description": "Creates a dependency for yielding a database session per request."
+  },
+
+  "CORS Middleware": {
+    "prefix": "fastcors",
+    "body": [
+      "from fastapi.middleware.cors import CORSMiddleware",
+      "",
+      "app.add_middleware(",
+      "    CORSMiddleware,",
+      "    allow_origins=[\"${1:http://localhost:3000}\"],",
+      "    allow_credentials=True,",
+      "    allow_methods=[\"GET\", \"POST\", \"PUT\", \"DELETE\"],",
+      "    allow_headers=[\"Authorization\", \"Content-Type\"],",
+      ")"
+    ],
+    "description": "Configures Cross-Origin Resource Sharing (CORS) middleware."
+  },
+
+  "File Upload Endpoint": {
+    "prefix": "fastupload",
+    "body": [
+      "from typing import Annotated",
+      "from fastapi import UploadFile, File",
+      "",
+      "@router.post(\"/files/\", summary=\"Upload a file\")",
+      "async def create_upload_file(file: Annotated[UploadFile, File(description=\"A file read as UploadFile\")]):",
+      "    \"\"\"Handles file uploads and returns file metadata.\"\"\"",
+      "    # For larger files, consider streaming the contents to disk.",
+      "    # contents = await file.read()",
+      "    return {\"filename\": file.filename, \"content_type\": file.content_type}"
+    ],
+    "description": "Defines an endpoint for handling file uploads."
+  },
+
+  "WebSocket Endpoint": {
+    "prefix": "fastws",
+    "body": [
+      "from fastapi import WebSocket, WebSocketDisconnect",
+      "",
+      "@app.websocket(\"/ws/{client_id}\")",
+      "async def websocket_endpoint(websocket: WebSocket, client_id: int):",
+      "    await websocket.accept()",
+      "    try:",
+      "        while True:",
+      "            data = await websocket.receive_text()",
+      "            await websocket.send_text(f\"Message text was: {data}, from client #{client_id}\")",
+      "    except WebSocketDisconnect:",
+      "        # await manager.disconnect(websocket, client_id) # Example with a connection manager",
+      "        print(f\"Client #{client_id} disconnected\")"
+    ],
+    "description": "Defines a basic WebSocket endpoint for real-time communication."
+  },
+
+  "Custom Middleware": {
+    "prefix": "fastmiddle",
+    "body": [
+      "import time",
+      "from fastapi import Request",
+      "",
+      "@app.middleware(\"http\")",
+      "async def add_process_time_header(request: Request, call_next):",
+      "    start_time = time.time()",
+      "    response = await call_next(request)",
+      "    process_time = time.time() - start_time",
+      "    response.headers[\"X-Process-Time\"] = str(process_time)",
+      "    return response"
+    ],
+    "description": "Adds custom middleware, e.g., to calculate and add process time to headers."
+  },
+
+  "Pytest Test Client": {
+    "prefix": "fasttest",
+    "body": [
+      "from fastapi.testclient import TestClient",
+      "from .main import app",
+      "",
+      "client = TestClient(app)",
+      "",
+      "def test_${1:read_main}():",
+      "    response = client.get(\"/\")",
+      "    assert response.status_code == 200",
+      "    assert response.json() == {\"msg\": \"Hello World\"}"
+    ],
+    "description": "Sets up a TestClient for use with Pytest to test API endpoints."
+  },
+
+  "Static Files Mounting": {
+    "prefix": "faststatic",
+    "body": [
+      "from fastapi.staticfiles import StaticFiles",
+      "",
+      "app.mount(\"/${1:static}\", StaticFiles(directory=\"${2:static}\"), name=\"${3:static}\")"
+    ],
+    "description": "Mounts a directory to serve static files like CSS, JS, and images."
+  },
+
+  "Jinja2 Templates": {
+    "prefix": "fasttemplates",
+    "body": [
+      "from fastapi.templating import Jinja2Templates",
+      "from fastapi.responses import HTMLResponse",
+      "from fastapi import Request",
+      "",
+      "templates = Jinja2Templates(directory=\"${1:templates}\")",
+      "",
+      "@app.get(\"/${2:path}\", response_class=HTMLResponse)",
+      "async def read_item(request: Request, id: str):",
+      "    return templates.TemplateResponse(",
+      "        \"${3:item.html}\",",
+      "        {\"request\": request, \"id\": id}",
+      "    )"
+    ],
+    "description": "Configures Jinja2 for rendering HTML templates."
+  },
+
+  "SQLAlchemy Sync Setup": {
+    "prefix": "fastdb",
+    "body": [
+      "from sqlalchemy import create_engine",
+      "from sqlalchemy.orm import sessionmaker, declarative_base",
+      "",
+      "SQLALCHEMY_DATABASE_URL = \"${1:sqlite:///./test.db}\"",
+      "# For PostgreSQL: \"postgresql://user:password@postgresserver/db\"",
+      "",
+      "engine = create_engine(",
+      "    SQLALCHEMY_DATABASE_URL,",
+      "    # connect_args is only needed for SQLite.",
+      "    connect_args={\"check_same_thread\": False}",
+      ")",
+      "SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)",
+      "",
+      "Base = declarative_base()"
+    ],
+    "description": "Sets up a synchronous SQLAlchemy engine and session maker."
+  },
+
+  "Rate Limiting": {
+    "prefix": "fastlimit",
+    "body": [
+      "from fastapi import FastAPI, Request",
+      "from slowapi import Limiter, _rate_limit_exceeded_handler",
+      "from slowapi.util import get_remote_address",
+      "from slowapi.errors import RateLimitExceeded",
+      "",
+      "limiter = Limiter(key_func=get_remote_address)",
+      "app = FastAPI()",
+      "app.state.limiter = limiter",
+      "app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)",
+      "",
+      "@app.get(\"/limited\")",
+      "@limiter.limit(\"${1:5/minute}\")",
+      "async def limited_endpoint(request: Request):",
+      "    return {\"message\": \"This is a rate-limited endpoint.\"}"
+    ],
+    "description": "Implements API rate limiting using the slowapi library."
+  },
+
+  "ORJSON Response": {
+    "prefix": "fastresponse",
+    "body": [
+      "from fastapi.responses import ORJSONResponse",
+      "",
+      "@app.get(\"/items/{item_id}\", response_class=ORJSONResponse)",
+      "async def read_item(item_id: int):",
+      "    return ORJSONResponse({\"item_id\": item_id})"
+    ],
+    "description": "Uses ORJSONResponse for faster JSON serialization in an endpoint."
+  },
+
+  "Health Check Endpoint": {
+    "prefix": "fasthealth",
+    "body": [
+      "from fastapi import APIRouter",
+      "",
+      "router = APIRouter()",
+      "",
+      "@router.get(\"/health\", tags=[\"Monitoring\"], include_in_schema=False)",
+      "async def health_check():",
+      "    return {\"status\": \"ok\"}"
+    ],
+    "description": "Creates a simple health check endpoint, often excluded from public docs."
+  },
+
+  "Pagination Helper": {
+    "prefix": "fastpage",
+    "body": [
+      "from typing import List, TypeVar, Generic",
+      "from pydantic import BaseModel, Field",
+      "from fastapi import Query",
+      "",
+      "T = TypeVar('T')",
+      "",
+      "class PaginatedResponse(BaseModel, Generic[T]):",
+      "    total: int",
+      "    page: int",
+      "    size: int",
+      "    results: List[T]",
+      "",
+      "def paginate(",
+      "    items: List[T],",
+      "    page: int = Query(1, gt=0),",
+      "    size: int = Query(10, gt=0, le=100)",
+      ") -> PaginatedResponse[T]:",
+      "    start = (page - 1) * size",
+      "    paginated_items = items[start : start + size]",
+      "    return PaginatedResponse(total=len(items), page=page, size=size, results=paginated_items)"
+    ],
+    "description": "Provides a generic, reusable pagination function and response model."
+  },
+
+  "WebSocket Broadcast Manager": {
+    "prefix": "fastbroadcast",
+    "body": [
+      "from typing import List",
+      "from fastapi import WebSocket",
+      "",
+      "class ConnectionManager:",
+      "    def __init__(self):",
+      "        self.active_connections: List[WebSocket] = []",
+      "",
+      "    async def connect(self, websocket: WebSocket):",
+      "        await websocket.accept()",
+      "        self.active_connections.append(websocket)",
+      "",
+      "    def disconnect(self, websocket: WebSocket):",
+      "        self.active_connections.remove(websocket)",
+      "",
+      "    async def broadcast(self, message: str):",
+      "        for connection in self.active_connections:",
+      "            await connection.send_text(message)",
+      "",
+      "manager = ConnectionManager()"
+    ],
+    "description": "Creates a manager to handle multiple WebSocket connections for broadcasting."
+  },
+
+  "SQLAlchemy ORM Model": {
+    "prefix": "fastsqla",
+    "body": [
+      "from sqlalchemy import Column, Integer, String, Boolean, DateTime",
+      "from sqlalchemy.sql import func",
+      "from .database import Base",
+      "",
+      "class ${1:Item}(Base):",
+      "    __tablename__ = \"${2:items}\"",
+      "",
+      "    id = Column(Integer, primary_key=True)",
+      "    name = Column(String, index=True)",
+      "    description = Column(String, index=True)",
+      "    is_active = Column(Boolean, default=True)",
+      "    created_at = Column(DateTime(timezone=True), server_default=func.now())"
+    ],
+    "description": "Defines a SQLAlchemy ORM model class for database table mapping."
+  },
+
+  "Role-Based Access Control": {
+    "prefix": "fastroles",
+    "body": [
+      "from typing import Annotated",
+      "from fastapi import Depends, HTTPException, status",
+      "",
+      "def role_checker(required_role: str):",
+      "    def check_user_role(current_user: Annotated[${1:User}, Depends(${2:get_current_user})]):",
+      "        if current_user.role != required_role:",
+      "            raise HTTPException(",
+      "                status_code=status.HTTP_403_FORBIDDEN,",
+      "                detail=\"Operation not permitted\"",
+      "            )",
+      "        return current_user",
+      "    return check_user_role",
+      "",
+      "admin_dependency = Depends(role_checker(\"admin\"))"
+    ],
+    "description": "Implements a flexible dependency for role-based access control (RBAC)."
+  },
+
+  "Async Database Connection": {
+    "prefix": "fastasyncdb",
+    "body": [
+      "import databases",
+      "from fastapi import FastAPI",
+      "",
+      "DATABASE_URL = \"${1:postgresql://user:password@host/database}\"",
+      "database = databases.Database(DATABASE_URL)",
+      "",
+      "app = FastAPI()",
+      "",
+      "@app.on_event(\"startup\")",
+      "async def startup():",
+      "    await database.connect()",
+      "",
+      "@app.on_event(\"shutdown\")",
+      "async def shutdown():",
+      "    await database.disconnect()"
+    ],
+    "description": "Handles the lifecycle of an asynchronous database connection."
+  },
+
+  "Custom Exception Handler": {
+    "prefix": "fastexcept",
+    "body": [
+      "from fastapi import Request, status",
+      "from fastapi.responses import JSONResponse",
+      "",
+      "class ${1:MyCustomException}(Exception):",
+      "    def __init__(self, name: str):",
+      "        self.name = name",
+      "",
+      "@app.exception_handler(${1:MyCustomException})",
+      "async def custom_exception_handler(request: Request, exc: ${1:MyCustomException}):",
+      "    return JSONResponse(",
+      "        status_code=status.HTTP_418_IM_A_TEAPOT,",
+      "        content={\"message\": f\"Oops! {exc.name} did something wrong.\"}",
+      "    )"
+    ],
+    "description": "Defines a custom exception and its corresponding handler."
+  },
+
+  "Background Email Sending": {
+    "prefix": "fastemail",
+    "body": [
+      "from fastapi import BackgroundTasks",
+      "",
+      "def ${1:send_email_background}(background_tasks: BackgroundTasks, subject: str, recipient: str, body: str):",
+      "    # Dummy email sending function",
+      "    def send(subject, recipient, body):",
+      "        print(f\"Sending email to {recipient} with subject '{subject}'\")",
+      "        # Add actual email sending logic here (e.g., using smtplib or a third-party service)",
+      "",
+      "    background_tasks.add_task(send, subject, recipient, body)"
+    ],
+    "description": "Adds an email sending function to run in the background."
+  },
+
+  "Redis Caching": {
+    "prefix": "fastcache",
+    "body": [
+      "from fastapi import FastAPI",
+      "from redis import asyncio as aioredis",
+      "from fastapi_cache import FastAPICache",
+      "from fastapi_cache.backends.redis import RedisBackend",
+      "from fastapi_cache.decorator import cache",
+      "",
+      "app = FastAPI()",
+      "",
+      "@app.on_event(\"startup\")",
+      "async def startup():",
+      "    redis = aioredis.from_url(\"redis://localhost\")",
+      "    FastAPICache.init(RedisBackend(redis), prefix=\"fastapi-cache\")",
+      "",
+      "@app.get(\"/cached-route\")",
+      "@cache(expire=${1:60}) # Cache for 60 seconds",
+      "async def get_cached_data():",
+      "    return {\"message\": \"This data is cached\"}"
+    ],
+    "description": "Integrates Redis for caching endpoint responses."
+  },
+
+  "Structured Logging": {
+    "prefix": "fastlog",
+    "body": [
+      "import logging",
+      "from logging.config import dictConfig",
+      "",
+      "LOGGING_CONFIG = {",
+      "    \"version\": 1,",
+      "    \"disable_existing_loggers\": False,",
+      "    \"formatters\": {",
+      "        \"default\": {",
+      "            \"format\": \"%(asctime)s - %(name)s - %(levelname)s - %(message)s\",",
+      "        },",
+      "    },",
+      "    \"handlers\": {",
+      "        \"console\": {",
+      "            \"class\": \"logging.StreamHandler\",",
+      "            \"formatter\": \"default\",",
+      "        },",
+      "    },",
+      "    \"root\": {",
+      "        \"level\": \"INFO\",",
+      "        \"handlers\": [\"console\"],",
+      "    },",
+      "}",
+      "",
+      "dictConfig(LOGGING_CONFIG)",
+      "logger = logging.getLogger(\"${1:my_app}\")"
+    ],
+    "description": "Configures structured logging using Python's dictConfig."
+  }
+}

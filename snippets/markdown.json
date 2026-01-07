@@ -144,7 +144,7 @@
   },
   "Insert code block": {
     "prefix": "cb",
-    "body": ["```${1:language}", "$0", "```"],
+    "body": ["```$1", "$0", "```"],
     "description": "Insert fenced code block"
   },
   "Insert Go code block": {
@@ -153,9 +153,14 @@
     "description": "Insert fenced C code block"
   },
   "Insert Python code block": {
-    "prefix": "cbp",
-    "body": ["```python", "$0", "```"],
+    "prefix": "`p",
+    "body": ["```python", "$1", "```\n", "$0"],
     "description": "Insert fenced Python code block"
+  },
+  "Insert SQL code block": {
+    "prefix": "`s",
+    "body": ["```sql", "$1", "```\n", "$0"],
+    "description": "Insert fenced SQL code block"
   },
   "Insert shell code block": {
     "prefix": "cbs",
@@ -177,13 +182,13 @@
   },
   "Insert flashcard snippet": {
     "prefix": "flc",
-    "body": ["<br class=\"f\">"],
-    "description": "Insert flashcard snippet"
+    "body": ["<span class=\"f\"></span>"],
+    "description": "Insert base flashcard snippet"
   },
   "Insert inline flashcard snippet": {
     "prefix": "inflc",
     "body": [":<wbr class=\"f\"> $0"],
-    "description": "Insert flashcard snippet"
+    "description": "Insert inline flashcard snippet"
   },
   "Insert inverted inline flashcard snippet": {
     "prefix": "inflci",
