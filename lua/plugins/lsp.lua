@@ -75,8 +75,8 @@ return {
                 end,
             },
             mapping = cmp.mapping.preset.insert({
-                ['<C-b>'] = cmp.mapping.scroll_docs(-4),
-                ['<C-f>'] = cmp.mapping.scroll_docs(4),
+                ["<C-b>"] = cmp.mapping.scroll_docs(-4),
+                ["<C-f>"] = cmp.mapping.scroll_docs(4),
                 ["<C-e>"] = cmp.mapping.abort(),
                 ["<C-p>"] = cmp.mapping.select_prev_item(cmp_select),
                 ["<C-n>"] = cmp.mapping.select_next_item(cmp_select),
@@ -156,7 +156,6 @@ return {
             "gopls",
             "bashls",
             "asm_lsp",
-            "ts_ls",
             "dockerls",
             "yamlls",
         }
@@ -167,6 +166,49 @@ return {
             })
             vim.lsp.enable(lsp)
         end
+
+        local vue_language_server_path = vim.fn.exepath("vue-language-server")
+        local tsserver_filetypes = {
+            "typescript",
+            "javascript",
+            "javascriptreact",
+            "typescriptreact",
+            "vue",
+        }
+        local vue_plugin = {
+            name = "@vue/typescript-plugin",
+            location = vue_language_server_path,
+            languages = { "vue" },
+            configNamespace = "typescript",
+        }
+        local vtsls_config = {
+            settings = {
+                vtsls = {
+                    tsserver = {
+                        globalPlugins = {
+                            vue_plugin,
+                        },
+                    },
+                },
+            },
+            filetypes = tsserver_filetypes,
+        }
+
+        local ts_ls_config = {
+            init_options = {
+                plugins = {
+                    vue_plugin,
+                },
+            },
+            filetypes = tsserver_filetypes,
+        }
+
+        -- If you are on most recent `nvim-lspconfig`
+        local vue_ls_config = {}
+        vim.lsp.config("vtsls", vtsls_config)
+        vim.lsp.config("vue_ls", vue_ls_config)
+        vim.lsp.config("ts_ls", ts_ls_config)
+        vim.lsp.enable({ "vtsls", "vue_ls" }) -- If using `ts_ls` replace `vtsls` to `ts_ls`
 
         vim.lsp.config("texlab", {
             capabilities = capabilities,
@@ -392,6 +434,7 @@ return {
                 "pug",
                 "typescriptreact",
                 "smarty",
+                "vue",
             },
         })
         vim.lsp.enable("emmet_language_server")
@@ -481,22 +524,7 @@ return {
                     )
                 end
 
-                -- Custom LSP mappings
-                map("K", function()
-                    local base_win_id = vim.api.nvim_get_current_win()
-                    local windows = vim.api.nvim_tabpage_list_wins(0)
-                    for _, win_id in ipairs(windows) do
-                        if win_id ~= base_win_id then
-                            local win_cfg = vim.api.nvim_win_get_config(win_id)
-                            if win_cfg.relative == "win" and win_cfg.win == base_win_id then
-                                vim.api.nvim_win_close(win_id, {})
-                                return
-                            end
-                        end
-                    end
-                    vim.lsp.buf.hover()
-                end, "toggle hover")
-
+                map("K", vim.lsp.buf.hover, "show hover")
                 map("gd", vim.lsp.buf.definition, "show definitions")
                 map("go", vim.lsp.buf.workspace_symbol, "workspace symbol")
                 map("gl", vim.diagnostic.open_float, "open diagnostic")
