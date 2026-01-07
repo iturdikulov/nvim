@@ -76,6 +76,12 @@ return {
                     -- Toggles
                     map(
                         "n",
+                        "<leader>hs",
+                        gitsigns.toggle_signs,
+                        { desc = "Toggle signs" }
+                    )
+                    map(
+                        "n",
                         "<leader>tb",
                         gitsigns.toggle_current_line_blame,
                         { desc = "Toggle blame" }
