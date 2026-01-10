@@ -135,6 +135,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
         vim.opt.number = false
         vim.opt.relativenumber = false
         vim.opt.signcolumn = "no"
+        vim.opt.wrap = false
     end,
 })
 
