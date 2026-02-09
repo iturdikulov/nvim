@@ -9,6 +9,9 @@ vim.keymap.set(
     { desc = "C-n C-n exits terminal mode" }
 )
 
+-- Fix Ctrl-W in terminal mode
+vim.keymap.set('t','<C-W>', '<C-\\><C-n><C-W>')
+
 vim.keymap.set("n", "<C-d>", "<C-d>zz")
 vim.keymap.set("n", "<C-u>", "<C-u>zz")
 
@@ -91,6 +94,17 @@ vim.keymap.set(
 
 -- Make current file executable
 vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true })
+
+-- Copy file:line (branch) to clipboard
+vim.keymap.set('n', '<leader>fp', function()
+    local path = vim.fn.expand('%:.')
+    local line = vim.fn.line('.')
+    local branch = vim.fn.system('git branch --show-current 2>/dev/null | tr -d "\\n"')
+    local text = branch ~= '' and string.format('%s:%d (%s)', path, line,
+    branch)
+    or string.format('%s:%d', path, line)
+    vim.fn.setreg('+', text)
+end, {desc = 'Yank file:line (branch)'})
 
 -- Open file in external program (xdg-open)
 vim.keymap.set(
