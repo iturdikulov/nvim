@@ -1,5 +1,7 @@
 return {
     "folke/snacks.nvim",
+    priority = 1000,
+    lazy = false,
     dependencies = {
         "nvim-tree/nvim-web-devicons",
     },
@@ -87,14 +89,18 @@ return {
             },
         },
         explorer = { replace_netrw = true },
-        bigfile = { enabled = true },
+        bigfile = {
+            enabled = true,
+        },
         indent = {
             enabled = true,
             animate = {
                 enabled = false,
             },
         },
-        gibrowse = { enabled = true },
+        gitbrowse = {
+            enabled = true,
+        },
         lazygit = {
             enabled = true,
             configure = true,
@@ -156,6 +162,7 @@ return {
             zen = {
                 minimal = true,
                 width = 80,
+                backdrop = { transparent = false },
                 wo = {
                     wrap = true,
                     linebreak = true
@@ -230,7 +237,7 @@ return {
         {
             "<leader>gB",
             function()
-                Snacks.gitbrowse()
+                Snacks.gitbrowse.open({ what = 'commit'})
             end,
             desc = "Git Browse",
             mode = { "n", "v" },
