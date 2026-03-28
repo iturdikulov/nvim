@@ -1,13 +1,21 @@
 return {
     "nvim-treesitter/nvim-treesitter",
+    lazy = false,
+    build = ':TSUpdate',
     dependencies = {
         "nvim-treesitter/nvim-treesitter-textobjects",
     },
     config = function()
         -- Enable treesitter folding
         -- vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+        local status_ok, ts = pcall(require, "nvim-treesitter.configs")
 
-        require("nvim-treesitter.configs").setup({
+        if not status_ok then
+            ts = require("nvim-treesitter.config")
+            return
+        end
+
+        ts.setup({
             -- Add languages to be installed here that you want installed for treesitter
             ensure_installed = {
                 "comment",
