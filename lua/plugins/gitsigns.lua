@@ -3,14 +3,6 @@ return {
         "lewis6991/gitsigns.nvim",
         config = function()
             require("gitsigns").setup({
-                signs = {
-                    add = { text = "+" },
-                    change = { text = "~" },
-                    delete = { text = "_" },
-                    topdelete = { text = "‾" },
-                    changedelete = { text = "~" },
-                },
-                signs_staged_enable = false,
                 current_line_blame_opts = {
                     delay = 2000,
                     virt_text_pos = "eol",
@@ -71,6 +63,19 @@ return {
                         "<leader>hq",
                         gitsigns.setqflist,
                         { desc = "Set quickfix list" }
+                    )
+
+                    -- Stage/reset
+                    map({"n", "v"},
+                        "<leader>hh",
+                        gitsigns.stage_hunk,
+                        { desc = "Stage hunk" }
+                    )
+                    map(
+                        "n",
+                        "<leader>hr",
+                        gitsigns.reset_hunk,
+                        { desc = "Reset hunk" }
                     )
 
                     -- Toggles
