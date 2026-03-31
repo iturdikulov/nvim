@@ -13,7 +13,19 @@ return {
 		{
 			"mason-org/mason-lspconfig.nvim",
 			opts = {
-				ensure_installed = { "lua_ls", "basedpyright", "pylsp", "cssls", "vue-language-server", "ruff", "biome"  },
+				automatic_enable = false,
+				ensure_installed = {
+					"lua_ls",
+					"stylua",
+                    "basedpyright",
+					"vue_ls",
+					"pylsp",
+					"cssls",
+					"ruff",
+					"biome",
+					"vtsls",
+					"ts_ls",
+				},
 			},
 			dependencies = {
 				{ "mason-org/mason.nvim", opts = {} },
