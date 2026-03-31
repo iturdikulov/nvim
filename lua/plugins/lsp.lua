@@ -123,7 +123,6 @@ return {
 				{ name = "luasnip" }, -- For luasnip users.
 				{ name = "path", max_item_count = 3 },
 				{ name = "buffer", max_item_count = 5 },
-				{ name = "codecompanion" },
 				{
 					name = "spell",
 					max_item_count = 3,
