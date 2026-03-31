@@ -1,15 +1,15 @@
 return {
     {
-        "rose-pine/neovim",
-        name = "rose-pine",
+        "webhooked/kanso.nvim",
+        lazy = false,
         config = function()
-            require('rose-pine').setup({
-                styles = {
-                    italic = false,
-                    transparency = true,
-                },
+            require('kanso').setup({
+                italic = false,
+                transparency = false,
+                theme = 'zen',
+                minimal = true,
             })
-            vim.cmd.colorscheme("rose-pine")
+            vim.cmd.colorscheme("kanso")
         end
     }
 }
