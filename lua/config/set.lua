@@ -110,6 +110,19 @@ vim.g.netrw_browse_split = 0
 vim.g.netrw_winsize = 25
 vim.g.netrw_localcopydircmd = "cp -r" -- fix netrw recursive dir copy
 
+-- osc52 Clipboard
+vim.g.clipboard = {
+  name = "osc52",
+  copy = {
+    ["+"] = require("vim.ui.clipboard.osc52").copy("+"),
+    ["*"] = require("vim.ui.clipboard.osc52").copy("*"),
+  },
+  paste = {
+    ["+"] = function() return {} end,
+    ["*"] = function() return {} end,
+  },
+}
+
 -- Cursorline highlighting control
 --  Only have it on in the active buffer
 vim.opt.cursorline = true -- Highlight the current line
