@@ -12,6 +12,10 @@ return {
 		"f3fora/cmp-spell",
 		{
 			"mason-org/mason-lspconfig.nvim",
+			dependencies = {
+				"mason-org/mason.nvim",
+				"neovim/nvim-lspconfig",
+			},
 			opts = {
 				automatic_enable = false,
 				ensure_installed = {
@@ -26,10 +30,6 @@ return {
 					"vtsls",
 					"ts_ls",
 				},
-			},
-			dependencies = {
-				{ "mason-org/mason.nvim", opts = {} },
-				"neovim/nvim-lspconfig",
 			},
 		},
 		{
@@ -48,6 +48,13 @@ return {
 	},
 
 	config = function()
+		-- Install non-lsp mason packages
+		local my_packages = "goimports deno djlint shfmt sqlfluff tex-fmt js-debug-adapter"
+		vim.keymap.set('n', '<leader>mi', ':MasonInstall ' .. my_packages .. '<CR>', {
+			desc = '[M]ason [I]nstall packages',
+			silent = true
+		})
+
 		-- List server capabilities
 		vim.api.nvim_create_user_command("LspCapabilities", function()
 			local curBuf = vim.api.nvim_get_current_buf()
@@ -63,26 +70,15 @@ return {
 						end
 					end
 					table.sort(capAsList) -- sorts alphabetically
-					local msg = "# "
-						.. client.name
-						.. "\n"
-						.. table.concat(capAsList, "\n")
+					local msg = "# " .. client.name .. "\n" .. table.concat(capAsList, "\n")
 					vim.notify(msg, "trace", {
 						on_open = function(win)
 							local buf = vim.api.nvim_win_get_buf(win)
-							vim.api.nvim_buf_set_option(
-								buf,
-								"filetype",
-								"markdown"
-							)
+							vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
 						end,
 						timeout = 14000,
 					})
-					fn.setreg(
-						"+",
-						"Capabilities = "
-							.. vim.inspect(client.server_capabilities)
-					)
+					fn.setreg("+", "Capabilities = " .. vim.inspect(client.server_capabilities))
 				end
 			end
 		end, {})
@@ -180,13 +176,13 @@ return {
 			vim.lsp.enable(lsp)
 		end
 
-		local vue_language_server_path = vim.fn.exepath("vue-language-server")
+		local vue_language_server_path = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
 		local tsserver_filetypes = {
 			"typescript",
 			"javascript",
 			"javascriptreact",
 			"typescriptreact",
-			"vue",
+			"vue"
 		}
 		local vue_plugin = {
 			name = "@vue/typescript-plugin",
@@ -194,7 +190,9 @@ return {
 			languages = { "vue" },
 			configNamespace = "typescript",
 		}
+
 		local vtsls_config = {
+            capabilities = capabilities,
 			settings = {
 				vtsls = {
 					tsserver = {
@@ -208,6 +206,7 @@ return {
 		}
 
 		local ts_ls_config = {
+            capabilities = capabilities,
 			init_options = {
 				plugins = {
 					vue_plugin,
@@ -217,7 +216,9 @@ return {
 		}
 
 		-- If you are on most recent `nvim-lspconfig`
-		local vue_ls_config = {}
+        local vue_ls_config = {
+            capabilities = capabilities,
+		}
 		vim.lsp.config("vtsls", vtsls_config)
 		vim.lsp.config("vue_ls", vue_ls_config)
 		vim.lsp.config("ts_ls", ts_ls_config)
@@ -270,21 +271,20 @@ return {
 		vim.lsp.enable("texlab")
 
 		-- Extend capabilities to add dynamicRegistration
-		local basedpyrightCapabilities =
-			vim.tbl_deep_extend("force", capabilities, {
-				textDocument = {
-					publishDiagnostics = {
-						tagSupport = {
-							valueSet = { 2 }, -- Fix ruff duplicate reporting
-						},
+		local basedpyrightCapabilities = vim.tbl_deep_extend("force", capabilities, {
+			textDocument = {
+				publishDiagnostics = {
+					tagSupport = {
+						valueSet = { 2 }, -- Fix ruff duplicate reporting
 					},
 				},
-				workspace = {
-					didChangeWatchedFiles = {
-						dynamicRegistration = true,
-					},
+			},
+			workspace = {
+				didChangeWatchedFiles = {
+					dynamicRegistration = true,
 				},
-			})
+			},
+		})
 
 		vim.lsp.config("basedpyright", {
 			capabilities = basedpyrightCapabilities,
@@ -528,15 +528,18 @@ return {
 						desc = "[LSP] " .. desc
 					end
 
-					vim.keymap.set(
-						"n",
-						lhs,
-						rhs,
-						{ buffer = e.buf, desc = desc }
-					)
+					vim.keymap.set("n", lhs, rhs, { buffer = e.buf, desc = desc })
 				end
 
-				map("K", vim.lsp.buf.hover, "show hover")
+				map("K", function()
+					vim.lsp.buf.hover {
+						border = "single",
+						max_height = 25,
+						max_width = 130,
+						close_events = { "CursorMoved", "LSPDetach" },
+					}
+				end)
+
 				map("gd", vim.lsp.buf.definition, "show definitions")
 				map("go", vim.lsp.buf.workspace_symbol, "workspace symbol")
 				map("gl", vim.diagnostic.open_float, "open diagnostic")
