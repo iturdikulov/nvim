@@ -4,15 +4,15 @@ return {
         config = function()
             -- Invoke special functions to parse list
             require("minuet").setup({
-                provider = "codestral",
+                provider = "openai_compatible",
                 n_completions = 3,
                 -- I recommend beginning with a small context window size and incrementally
                 -- expanding it, depending on your local computing power. A context window
                 -- of 512, serves as an good starting point to estimate your computing
                 -- power. Once you have a reliable estimate of your local computing power,
                 -- -- you should adjust the context window to a larger value.
-                context_window = 8012,
-                request_timeout = 8,
+                context_window = 2048,
+                request_timeout = 12,
                 virtualtext = {
                     -- Specify the filetypes to enable automatic virtual text completion,
                     -- e.g., { 'python', 'lua' }. Note that you can still invoke manual
@@ -35,6 +35,20 @@ return {
                     show_on_completion_menu = true,
                 },
                 provider_options = {
+                    openai_compatible = {
+                        api_key = 'OPENROUTER_API_KEY',
+                        end_point = 'https://openrouter.ai/api/v1/chat/completions',
+                        model = 'google/gemini-3.1-flash-lite-preview',
+                        name = 'Openrouter',
+                        optional = {
+                            max_tokens = 255,
+                            provider = {
+                                -- Prioritize throughput for faster completion
+                                sort = 'throughput',
+                                only = {'google-vertex'}
+                            },
+                        },
+                    },
                     gemini = {
                         model = "gemini-2.5-flash-lite-preview-09-2025",
                         optional = {
@@ -47,19 +61,31 @@ return {
                             stop = { "\n\n" },
                         },
                     },
-                    compatible = {
-                        -- For Windows users, TERM may not be present in environment variables.
-                        -- Consider using APPDATA instead.
-                        --
-                        api_key = "TERM",
-                        name = "Ollama",
-                        end_point = "http://localhost:11434/v1/chat/completions",
-                        model = "gpt-oss:latest",
+                    openai_fim_compatible_local = {
+                        api_key = 'TERM',
+                        name = 'Llama.cpp',
+                        end_point = 'http://localhost:8001/v1/completions',
+                        -- The model is set by the llama-cpp server and cannot be altered
+                        -- post-launch.
+                        model = 'PLACEHOLDER',
                         optional = {
-                            max_completion_tokens = 128,
-                            reasoning_effort = "low",
+                            max_tokens = 56,
+                            top_p = 0.9,
                         },
-                    },
+                        -- Llama.cpp does not support the `suffix` option in FIM completion.
+                        -- Therefore, we must disable it and manually populate the special
+                        -- tokens required for FIM completion.
+                        template = {
+                            prompt = function(context_before_cursor, context_after_cursor, _)
+                                return '<|fim_prefix|>'
+                                    .. context_before_cursor
+                                    .. '<|fim_suffix|>'
+                                    .. context_after_cursor
+                                    .. '<|fim_middle|>'
+                            end,
+                            suffix = false,
+                        },
+                    }
                 },
             })
         end,
