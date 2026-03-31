@@ -13,37 +13,6 @@ local function get_pkg_path(pkg, path)
 	return ret
 end
 
-local function navigate(args)
-	local buffer = args.buf
-
-	local wid = nil
-	local win_ids = vim.api.nvim_list_wins() -- Get all window IDs
-	for _, win_id in ipairs(win_ids) do
-		local win_bufnr = vim.api.nvim_win_get_buf(win_id)
-		if win_bufnr == buffer then
-			wid = win_id
-		end
-	end
-
-	if wid == nil then
-		return
-	end
-
-	vim.schedule(function()
-		if vim.api.nvim_win_is_valid(wid) then
-			vim.api.nvim_set_current_win(wid)
-		end
-	end)
-end
-
-local function create_nav_options(name)
-	return {
-		group = "DapGroup",
-		pattern = string.format("*%s*", name),
-		callback = navigate,
-	}
-end
-
 return {
 	{
 		"mfussenegger/nvim-dap",
@@ -343,26 +312,103 @@ return {
 
 			local debug_ports = { 5681, 5682, 5683, 5684 }
 
-		    local function reattach_to_port(session)
-		    	if session and session.config and session.config.connect then
-		    		local port = session.config.connect.port
+			-- TODO: no idea how it's working, need review!
+			local function check_port_and_attach(config, retries)
+				local port = config.connect.port
+				local host = config.connect.host
+				local timer = vim.loop.new_timer()
+				local count = 0
+				local max_retries = retries or 20
 
-		    		vim.defer_fn(function()
-		    			vim.notify(string.format("Reflex restart on port %d. Re-attaching...", port))
-		    			require('dap').run(session.config)
-		    		end, 5000)
-		    	end
-		    end
+				timer:start(1000, 1000, function()
+					local tcp = vim.loop.new_tcp()
+					tcp:connect(host, port, function(err)
+						tcp:close()
+						if not err then
+							timer:stop()
+							-- CRITICAL: We must schedule the DAP start to move out of the fast event context
+							vim.schedule(function()
+								vim.notify(string.format("Port %d is ready! Attaching...", port), vim.log.levels.INFO)
+								require('dap').run(config)
+							end)
+						else
+							count = count + 1
+							if count % 5 == 0 then
+								-- Notifications also need scheduling if called from a low-level callback
+								vim.schedule(function()
+									vim.notify(string.format("Waiting for Reflex on port %d...", port), vim.log.levels.WARN)
+								end)
+							end
+							if count >= max_retries then
+								timer:stop()
+								vim.schedule(function()
+									vim.notify("Re-attach timed out.", vim.log.levels.ERROR)
+								end)
+							end
+						end
+					end)
+				end)
+			end
 
-		    dap.listeners.after.event_terminated['debugpy_reflex_auto'] = function(session)
-		    	reattach_to_port(session)
-		    end
+			-- Command to safely "Detach" (not Terminate)
+			_G.safe_dap_restart = function()
+				local session = dap.session()
+				if session then
+					local config = vim.deepcopy(session.config)
+					-- Use 'disconnect' instead of 'terminate' to keep the remote process running
+					dap.disconnect({ terminateDebuggee = false }, function()
+						vim.notify("Disconnected. Polling for Reflex restart...", vim.log.levels.INFO)
+						check_port_and_attach(config)
+					end)
+				else
+					vim.notify("No active session to restart.", vim.log.levels.WARN)
+				end
+			end
+			vim.keymap.set('n', '<leader>dr', [[<cmd>lua _G.safe_dap_restart()<CR>]], { desc = "DAP: Safe Re-attach" })
+
+			-- Function to safely detach without triggering the auto-attach loop
+			local auto_reattach_enabled = true -- Global to this config scope
+			local function safe_detach()
+				local session = require("dap").session()
+				if session then
+					-- 1. Disable the auto-attach logic BEFORE disconnecting
+					auto_reattach_enabled = false
+
+					-- 2. Disconnect but keep the backend running
+					require("dap").disconnect({ terminateDebuggee = false })
+				end
+			end
+			vim.keymap.set('n', '<leader>dd', safe_detach, { desc = "DAP: Safe Detach" })
+
+			-- When a session starts successfully, re-enable auto-attach logic
+			dap.listeners.after.event_initialized['debugpy_reflex_auto'] = function(session)
+				auto_reattach_enabled = true
+			end
+
+			-- When the session ends, only re-attach if we didn't manually detach
+			dap.listeners.after.event_terminated['debugpy_reflex_auto'] = function(session)
+				if auto_reattach_enabled and session and session.config and session.config.request == "attach" then
+					-- Use your fixed check_port_and_attach here
+					check_port_and_attach(session.config)
+				else
+					-- TODO: not sure how it's working
+					-- Reset for next time a manual connection is made
+					auto_reattach_enabled = true
+				end
+			end
 
 			for _, port in ipairs(debug_ports) do
+                local env_label = os.getenv(string.format("DAP_PORT_%d_LABEL", port))
+				local display_name = string.format("Attach to Docker (Port %d)", port)
+
+				if env_label then
+					display_name = string.format("Attach to %s (%d)", env_label, port)
+				end
+
 				table.insert(dap.configurations.python, {
 					type = "python",
-					request = "attach",
-					name = string.format("Attach to Docker (Port %d)", port),
+                    request = "attach",
+					name = display_name,
 					connect = {
 						host = "127.0.0.1",
 						port = port,
