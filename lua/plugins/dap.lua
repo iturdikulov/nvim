@@ -30,7 +30,12 @@ return {
 			-- virtual text
 			require("nvim-dap-virtual-text").setup({})
 
-			vim.keymap.set("n", "<leader>b", dap.toggle_breakpoint, { desc = "Debug: Toggle Breakpoint" })
+			vim.keymap.set(
+				"n",
+				"<leader>b",
+				dap.toggle_breakpoint,
+				{ desc = "Debug: Toggle Breakpoint" }
+			)
 			vim.keymap.set("n", "<leader>B", function()
 				dap.set_breakpoint(vim.fn.input("Breakpoint condition: "))
 			end, { desc = "Debug: Set Conditional Breakpoint" })
@@ -55,10 +60,30 @@ return {
 				vim.cmd("silent !/workspace/packages/rtms-backend/curl.sh &")
 			end, { desc = "Debug: Restart Debugger" })
 
-			vim.keymap.set("n", "<F1>", dap.continue, { desc = "Debug: Continue until Breakpoint" })
-			vim.keymap.set("n", "<F2>", dap.step_into, { desc = "Debug: Step Into Details" })
-			vim.keymap.set("n", "<F3>", dap.step_over, { desc = "Debug: Step Over Instruction" })
-			vim.keymap.set("n", "<F4>", dap.step_out, { desc = "Debug: Step Out Details" })
+			vim.keymap.set(
+				"n",
+				"<F1>",
+				dap.continue,
+				{ desc = "Debug: Continue until Breakpoint" }
+			)
+			vim.keymap.set(
+				"n",
+				"<F2>",
+				dap.step_into,
+				{ desc = "Debug: Step Into Details" }
+			)
+			vim.keymap.set(
+				"n",
+				"<F3>",
+				dap.step_over,
+				{ desc = "Debug: Step Over Instruction" }
+			)
+			vim.keymap.set(
+				"n",
+				"<F4>",
+				dap.step_out,
+				{ desc = "Debug: Step Out Details" }
+			)
 
 			vim.keymap.set("n", "<leader>dg", function()
 				dap.run_to_cursor()
@@ -80,13 +105,30 @@ return {
 			vim.api.nvim_create_autocmd("FileType", {
 				pattern = "dap-float",
 				callback = function()
-					vim.api.nvim_buf_set_keymap(0, "n", "q", "<cmd>close!<CR>", { noremap = true, silent = true })
+					vim.api.nvim_buf_set_keymap(
+						0,
+						"n",
+						"q",
+						"<cmd>close!<CR>",
+						{ noremap = true, silent = true }
+					)
 				end,
 			})
 
-			vim.keymap.set("n", "<F6>", dap.step_back, { desc = "Debug: Step Back in Time" })
+			vim.keymap.set(
+				"n",
+				"<F6>",
+				dap.step_back,
+				{ desc = "Debug: Step Back in Time" }
+			)
 
-			for _, adapter in pairs({ "pwa-node", "pwa-chrome", "pwa-msedge", "node-terminal", "pwa-extensionHost" }) do
+			for _, adapter in pairs({
+				"pwa-node",
+				"pwa-chrome",
+				"pwa-msedge",
+				"node-terminal",
+				"pwa-extensionHost",
+			}) do
 				require("dap").adapters[adapter] = {
 					type = "server",
 					host = "localhost",
@@ -94,7 +136,10 @@ return {
 					executable = {
 						command = "node",
 						args = {
-							get_pkg_path("js-debug-adapter", "/js-debug/src/dapDebugServer.js"),
+							get_pkg_path(
+								"js-debug-adapter",
+								"/js-debug/src/dapDebugServer.js"
+							),
 							"${port}",
 						},
 					},
@@ -211,7 +256,15 @@ return {
 		opts = {
 			winbar = {
 				show_keymap_hints = false,
-				sections = { "watches", "scopes", "exceptions", "breakpoints", "threads", "repl", "console" },
+				sections = {
+					"watches",
+					"scopes",
+					"exceptions",
+					"breakpoints",
+					"threads",
+					"repl",
+					"console",
+				},
 				base_sections = {
 					breakpoints = { label = "Breaks", keymap = "B" },
 					scopes = { label = "Scope", keymap = "S" },
@@ -229,18 +282,23 @@ return {
 					local wins = vim.api.nvim_tabpage_list_wins(0)
 
 					-- Restores previous position if terminal is visible
-					if vim.iter(wins):find(function(win)
-						return vim.w[win].dapview_win_term
-					end) then
+					if
+						vim.iter(wins):find(function(win)
+							return vim.w[win].dapview_win_term
+						end)
+					then
 						return prev
 					end
 
 					return vim.tbl_count(vim.iter(wins)
 						:filter(function(win)
 							local buf = vim.api.nvim_win_get_buf(win)
-							local valid_buftype =
-								vim.tbl_contains({ "", "help", "prompt", "quickfix", "terminal" }, vim.bo[buf].buftype)
-							local dapview_win = vim.w[win].dapview_win or vim.w[win].dapview_win_term
+							local valid_buftype = vim.tbl_contains(
+								{ "", "help", "prompt", "quickfix", "terminal" },
+								vim.bo[buf].buftype
+							)
+							local dapview_win = vim.w[win].dapview_win
+								or vim.w[win].dapview_win_term
 							return valid_buftype and not dapview_win
 						end)
 						:totable()) > 1 and "below" or "right"
@@ -301,147 +359,138 @@ return {
 			dap_python.setup(vim.g.python3_host_prog)
 			dap_python.test_runner = "pytest"
 
+			-----------------------------------------------------------------------
+			-- 1. RE-ATTACH LOGIC (The "Magic" explained)
+			-----------------------------------------------------------------------
+			local auto_reattach_enabled = true
+
+			local function check_port_and_attach(config, retries)
+				local host = config.host
+					or (config.connect and config.connect.host)
+					or "127.0.0.1"
+				local port = config.port
+					or (config.connect and config.connect.port)
+					or 5678
+				local max_retries = 30
+				retries = retries or 0
+
+				if retries > max_retries then
+					vim.notify(
+						"DAP: Re-attach timed out. Is the server running?",
+						vim.log.levels.ERROR
+					)
+					return
+				end
+
+				local client = vim.loop.new_tcp()
+				client:connect(host, port, function(err)
+					client:close()
+					if not err then
+						vim.schedule(function()
+							vim.notify(
+								"DAP: Server found on "
+									.. port
+									.. "! Attaching...",
+								vim.log.levels.INFO
+							)
+							dap.run(config)
+						end)
+					else
+						-- Wait 1s and try again
+						vim.defer_fn(function()
+							check_port_and_attach(config, retries + 1)
+						end, 1000)
+					end
+				end)
+			end
+
+			-- Command to manually stop debugging without it auto-starting again
+			local function safe_detach()
+				local session = dap.session()
+				if session then
+					auto_reattach_enabled = false -- Tell the listener "Don't wake up"
+					dap.disconnect({ terminateDebuggee = false })
+					vim.notify(
+						"DAP: Manually detached. Auto-reload suspended.",
+						vim.log.levels.WARN
+					)
+				end
+			end
+
+			-- Keymaps for the new logic
+			vim.keymap.set(
+				"n",
+				"<leader>dd",
+				safe_detach,
+				{ desc = "Debug: Safe Detach (No Re-attach)" }
+			)
+
+			-----------------------------------------------------------------------
+			-- 2. LISTENERS
+			-----------------------------------------------------------------------
+
+			-- When a session starts, we always reset the flag so that unexpected
+			-- terminations in the future trigger a re-attach.
+			dap.listeners.after.event_initialized["debugpy_reflex_auto"] = function()
+				auto_reattach_enabled = true
+			end
+
+			dap.listeners.after.event_terminated["debugpy_reflex_auto"] = function(
+				session
+			)
+				if
+					auto_reattach_enabled
+					and session
+					and session.config
+					and session.config.request == "attach"
+				then
+					-- The session ended but NOT via safe_detach.
+					-- Likely a Reflex restart or a crash.
+					check_port_and_attach(session.config)
+				else
+					-- We reached here because of safe_detach OR it wasn't an 'attach' session.
+					-- Reset the flag so the NEXT manual start behaves normally.
+					auto_reattach_enabled = true
+				end
+			end
+
+			-----------------------------------------------------------------------
+			-- 3. CONFIGURATIONS
+			-----------------------------------------------------------------------
+			-- (Keep your existing table.insert and port loop here)
 			table.insert(dap.configurations.python, {
 				type = "python",
 				request = "launch",
 				name = "module",
 				console = "integratedTerminal",
-				module = "src", -- edit this to be your app's main module
+				module = "src",
 				cwd = "${workspaceFolder}",
 			})
 
 			local debug_ports = { 5681, 5682, 5683, 5684 }
-
-			-- TODO: no idea how it's working, need review!
-			local function check_port_and_attach(config, retries)
-				local port = config.connect.port
-				local host = config.connect.host
-				local timer = vim.loop.new_timer()
-				local count = 0
-				local max_retries = retries or 20
-
-				timer:start(1000, 1000, function()
-					local tcp = vim.loop.new_tcp()
-					tcp:connect(host, port, function(err)
-						tcp:close()
-						if not err then
-							timer:stop()
-							-- CRITICAL: We must schedule the DAP start to move out of the fast event context
-							vim.schedule(function()
-								vim.notify(string.format("Port %d is ready! Attaching...", port), vim.log.levels.INFO)
-								require('dap').run(config)
-							end)
-						else
-							count = count + 1
-							if count % 5 == 0 then
-								-- Notifications also need scheduling if called from a low-level callback
-								vim.schedule(function()
-									vim.notify(string.format("Waiting for Reflex on port %d...", port), vim.log.levels.WARN)
-								end)
-							end
-							if count >= max_retries then
-								timer:stop()
-								vim.schedule(function()
-									vim.notify("Re-attach timed out.", vim.log.levels.ERROR)
-								end)
-							end
-						end
-					end)
-				end)
-			end
-
-			-- Command to safely "Detach" (not Terminate)
-			_G.safe_dap_restart = function()
-				local session = dap.session()
-				if session then
-					local config = vim.deepcopy(session.config)
-					-- Use 'disconnect' instead of 'terminate' to keep the remote process running
-					dap.disconnect({ terminateDebuggee = false }, function()
-						vim.notify("Disconnected. Polling for Reflex restart...", vim.log.levels.INFO)
-						check_port_and_attach(config)
-					end)
-				else
-					vim.notify("No active session to restart.", vim.log.levels.WARN)
-				end
-			end
-			vim.keymap.set('n', '<leader>dr', [[<cmd>lua _G.safe_dap_restart()<CR>]], { desc = "DAP: Safe Re-attach" })
-
-			-- Function to safely detach without triggering the auto-attach loop
-			local auto_reattach_enabled = true -- Global to this config scope
-			local function safe_detach()
-				local session = require("dap").session()
-				if session then
-					-- 1. Disable the auto-attach logic BEFORE disconnecting
-					auto_reattach_enabled = false
-
-					-- 2. Disconnect but keep the backend running
-					require("dap").disconnect({ terminateDebuggee = false })
-				end
-			end
-			vim.keymap.set('n', '<leader>dd', safe_detach, { desc = "DAP: Safe Detach" })
-
-			-- When a session starts successfully, re-enable auto-attach logic
-			dap.listeners.after.event_initialized['debugpy_reflex_auto'] = function(session)
-				auto_reattach_enabled = true
-			end
-
-			-- When the session ends, only re-attach if we didn't manually detach
-			dap.listeners.after.event_terminated['debugpy_reflex_auto'] = function(session)
-				if auto_reattach_enabled and session and session.config and session.config.request == "attach" then
-					-- Use your fixed check_port_and_attach here
-					check_port_and_attach(session.config)
-				else
-					-- TODO: not sure how it's working
-					-- Reset for next time a manual connection is made
-					auto_reattach_enabled = true
-				end
-			end
-
 			for _, port in ipairs(debug_ports) do
-                local env_label = os.getenv(string.format("DAP_PORT_%d_LABEL", port))
-				local display_name = string.format("Attach to Docker (Port %d)", port)
-
-				if env_label then
-					display_name = string.format("Attach to %s (%d)", env_label, port)
-				end
+				local env_label =
+					os.getenv(string.format("DAP_PORT_%d_LABEL", port))
+				local display_name = env_label
+						and string.format("Attach to %s (%d)", env_label, port)
+					or string.format("Attach to Docker (Port %d)", port)
 
 				table.insert(dap.configurations.python, {
 					type = "python",
-                    request = "attach",
+					request = "attach",
 					name = display_name,
 					connect = {
 						host = "127.0.0.1",
 						port = port,
-                    },
-					restart = true,
+					},
 					pathMappings = {
 						{
-							-- Настраиваем маппинг. 
-							-- Если сервисы в разных папках, можно добавить логику выбора папки здесь
 							localRoot = vim.fn.getcwd(),
 							remoteRoot = "/workspace/packages/rtms-backend",
 						},
 					},
 				})
 			end
-
-			table.insert(dap.configurations.python, {
-				type = "python",
-				request = "attach",
-				name = "Attach to Docker",
-				connect = {
-					host = "127.0.0.1", -- Host where Docker port is exposed
-					port = 5679, -- Port exposed in docker-compose
-				},
-				console = "integratedTerminal",
-				-- Maps your local project root to the Docker container's workdir
-				pathMappings = {
-					{
-						localRoot = vim.fn.getcwd(), -- or specific path like '/home/user/project'
-						remoteRoot = "/apps/rtms-backend", -- Path inside the Docker container
-					},
-				},
-			})
 		end,
 	},
 }
