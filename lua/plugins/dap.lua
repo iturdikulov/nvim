@@ -359,8 +359,7 @@ return {
 			dap_python.setup(vim.g.python3_host_prog)
 			dap_python.test_runner = "pytest"
 
-			-----------------------------------------------------------------------
-			-- 1. RE-ATTACH LOGIC (The "Magic" explained)
+			-- 1. RE-ATTACH LOGIC
 			-----------------------------------------------------------------------
 			local auto_reattach_enabled = true
 
@@ -425,7 +424,6 @@ return {
 				{ desc = "Debug: Safe Detach (No Re-attach)" }
 			)
 
-			-----------------------------------------------------------------------
 			-- 2. LISTENERS
 			-----------------------------------------------------------------------
 
@@ -454,7 +452,6 @@ return {
 				end
 			end
 
-			-----------------------------------------------------------------------
 			-- 3. CONFIGURATIONS
 			-----------------------------------------------------------------------
 			-- (Keep your existing table.insert and port loop here)
