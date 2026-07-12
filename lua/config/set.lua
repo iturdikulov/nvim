@@ -181,3 +181,11 @@ if zsh ~= "" then
     vim.opt.shell = zsh
     vim.opt.shellcmdflag = "-lic"
 end
+
+-- Fix file types
+vim.filetype.add({
+  extension = {
+    sh = "sh",
+    bash = "sh",
+  },
+})

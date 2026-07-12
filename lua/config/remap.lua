@@ -95,6 +95,21 @@ vim.keymap.set(
 -- Make current file executable
 vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true })
 
+vim.keymap.set('n', '<leader>!', function()
+    local cmd = vim.fn.input('Run Shell: ')
+    if cmd == "" then return end
+ 
+    -- Open a split, run the command, and exit the shell process automatically
+    vim.cmd('split | term ' .. cmd .. ' && exit')
+ 
+    -- Set a buffer-local mapping so 'q' closes this specific terminal window
+    local buf = vim.api.nvim_get_current_buf()
+    vim.keymap.set('n', 'q', '<cmd>bd!<CR>', { buffer = buf, silent = true })
+ 
+    -- Automatically enter Terminal mode so you see the output/interact immediately
+    vim.cmd('startinsert')
+end, { desc = 'Run shell command in term and quit with q' })
+
 -- Copy file:line (branch) to clipboard
 vim.keymap.set('n', '<leader>fp', function()
     local path = vim.fn.expand('%:.')

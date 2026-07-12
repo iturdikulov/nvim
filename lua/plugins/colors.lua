@@ -10,6 +10,7 @@ return {
                 minimal = true,
             })
             vim.cmd.colorscheme("kanso")
+            vim.opt.background = "dark" -- or "light"
         end
     }
 }

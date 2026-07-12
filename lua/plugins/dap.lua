@@ -464,7 +464,7 @@ return {
 				cwd = "${workspaceFolder}",
 			})
 
-			local debug_ports = { 5681, 5682, 5683, 5684 }
+			local debug_ports = { 5681, 5682, 5683, 5684, 5685, 5686 }
 			for _, port in ipairs(debug_ports) do
 				local env_label =
 					os.getenv(string.format("DAP_PORT_%d_LABEL", port))

@@ -23,12 +23,26 @@ return {
 					"stylua",
                     "basedpyright",
 					"vue_ls",
+					"emmet_language_server",
 					"pylsp",
 					"cssls",
 					"ruff",
 					"biome",
 					"vtsls",
-					"ts_ls",
+                    "ts_ls",
+					-- "gopls",
+                    -- "sqls",
+					"rust_analyzer",
+                    "asm_lsp",
+					"bashls",
+					"markdown_oxide",
+					"texlab",
+					"jsonls",
+					"html",
+					"eslint",
+					"yamlls",
+					"docker_language_server",
+					"clangd",
 				},
 			},
 		},
@@ -49,8 +63,36 @@ return {
 
 	config = function()
 		-- Install non-lsp mason packages
-		local my_packages = "goimports deno djlint shfmt sqlfluff tex-fmt js-debug-adapter"
-		vim.keymap.set('n', '<leader>mi', ':MasonInstall ' .. my_packages .. '<CR>', {
+		local my_packages = {
+			-- Go
+			"goimports",
+
+			-- Shell
+			"shellcheck",
+			"shfmt",
+
+			-- SQL
+			"sqlfluff",
+
+			-- Python
+			"mypy",
+			"djlint",
+			"pylint",
+			"debugpy",
+
+			-- Markdown / Docs / LaTeX
+			"tex-fmt",
+
+			-- Web / Node ecosystem
+			"js-debug-adapter",
+		}
+
+
+		vim.keymap.set('n', '<leader>mi', function()
+			-- Join the table items into a single space-separated string
+			local packages_str = table.concat(my_packages, " ")
+			vim.cmd("MasonInstall " .. packages_str)
+		end, {
 			desc = '[M]ason [I]nstall packages',
 			silent = true
 		})
