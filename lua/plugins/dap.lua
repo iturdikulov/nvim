@@ -146,6 +146,42 @@ return {
 				}
 			end
 
+			-- Chromium in-container (X11). No host :9222 attach / SSH tunnel.
+			-- js-debug treats bare names (chromium/stable/…) as browser *channels*,
+			-- not PATH binaries — must pass an absolute path.
+			local function chromium_executable()
+				local from_path = vim.fn.exepath("chromium")
+				if from_path ~= "" then
+					return from_path
+				end
+				for _, candidate in ipairs({
+					"/home/dev/.local/bin/chromium",
+					"/usr/lib/chromium/chromium",
+					"/usr/bin/chromium",
+				}) do
+					if vim.fn.executable(candidate) == 1 then
+						return candidate
+					end
+				end
+				return "chromium"
+			end
+
+			local chrome_launch = {
+				type = "pwa-chrome",
+				name = "Launch Chrome in Devcontainer",
+				request = "launch",
+				url = "http://localhost:5051",
+				webRoot = "${workspaceFolder}",
+				runtimeExecutable = chromium_executable(),
+				-- Flags also come from ~/.local/bin/chromium wrapper; kept here as belt-and-suspenders.
+				runtimeArgs = {
+					"--no-sandbox",
+					"--disable-dev-shm-usage",
+					"--test-type",
+				},
+				userDataDir = "${workspaceFolder}/.vscode/vscode-chrome-debug-userdatadir",
+			}
+
 			for _, language in ipairs({ "typescript", "javascript" }) do
 				require("dap").configurations[language] = {
 					{
@@ -166,7 +202,6 @@ return {
 						type = "pwa-node",
 						request = "launch",
 						name = "Debug Jest Tests",
-						-- trace = true, -- include debugger info
 						runtimeExecutable = "node",
 						runtimeArgs = {
 							"./node_modules/jest/bin/jest.js",
@@ -177,26 +212,7 @@ return {
 						console = "integratedTerminal",
 						internalConsoleOptions = "neverOpen",
 					},
-					{
-						type = "pwa-chrome",
-						name = "Attach - Remote Debugging",
-						request = "attach",
-						program = "${file}",
-						sourceMaps = true,
-						protocol = "inspector",
-						address = "localhost",
-						port = 9222, -- Start Chrome google-chrome --remote-debugging-port=9222
-						cwd = "${workspaceFolder}",
-						webRoot = "${workspaceFolder}",
-					},
-					{
-						type = "pwa-chrome",
-						name = "Launch Chrome",
-						request = "launch",
-						url = "http://localhost:5001", -- This is for Vite. Change it to the framework you use
-						webRoot = "${workspaceFolder}",
-						userDataDir = "${workspaceFolder}/.vscode/vscode-chrome-debug-userdatadir",
-					},
+					chrome_launch,
 					{
 						type = "pwa-node",
 						request = "launch",
@@ -225,27 +241,9 @@ return {
 				}
 			end
 
-			for _, language in ipairs({ "typescriptreact", "javascriptreact" }) do
+			for _, language in ipairs({ "typescriptreact", "javascriptreact", "vue" }) do
 				require("dap").configurations[language] = {
-					{
-						type = "pwa-chrome",
-						name = "Attach - Remote Debugging",
-						request = "attach",
-						program = "${file}",
-						cwd = vim.fn.getcwd(),
-						sourceMaps = true,
-						protocol = "inspector",
-						port = 9222, -- Start Chrome google-chrome --remote-debugging-port=9222
-						webRoot = "${workspaceFolder}",
-					},
-					{
-						type = "pwa-chrome",
-						name = "Launch Chrome",
-						request = "launch",
-						url = "http://localhost:5001", -- This is for Vite. Change it to the framework you use
-						webRoot = "${workspaceFolder}",
-						userDataDir = "${workspaceFolder}/.vscode/vscode-chrome-debug-userdatadir",
-					},
+					vim.deepcopy(chrome_launch),
 				}
 			end
 		end,
@@ -464,6 +462,43 @@ return {
 				cwd = "${workspaceFolder}",
 			})
 
+			local function dap_remote_root(port)
+				local per_port =
+					os.getenv(string.format("DAP_PORT_%d_REMOTE_ROOT", port))
+				if per_port and per_port ~= "" then
+					return per_port
+				end
+				local global_root = os.getenv("DAP_REMOTE_ROOT")
+				if global_root and global_root ~= "" then
+					return global_root
+				end
+				local cwd = vim.fn.getcwd()
+				-- az-containers LTMS workflow (debugpy in ltms-backend)
+				if
+					vim.fn.isdirectory(cwd .. "/packages/ltms-backend") == 1
+					and port == 5681
+				then
+					return "/apps/ltms-backend"
+				end
+				return "/workspace/packages/rtms-backend"
+			end
+
+			local function dap_local_root(port)
+				local per_port =
+					os.getenv(string.format("DAP_PORT_%d_LOCAL_ROOT", port))
+				if per_port and per_port ~= "" then
+					return per_port
+				end
+				local cwd = vim.fn.getcwd()
+				if
+					vim.fn.isdirectory(cwd .. "/packages/ltms-backend") == 1
+					and port == 5681
+				then
+					return cwd .. "/packages/ltms-backend"
+				end
+				return cwd
+			end
+
 			local debug_ports = { 5681, 5682, 5683, 5684, 5685, 5686 }
 			for _, port in ipairs(debug_ports) do
 				local env_label =
@@ -482,8 +517,8 @@ return {
 					},
 					pathMappings = {
 						{
-							localRoot = vim.fn.getcwd(),
-							remoteRoot = "/workspace/packages/rtms-backend",
+							localRoot = dap_local_root(port),
+							remoteRoot = dap_remote_root(port),
 						},
 					},
 				})
