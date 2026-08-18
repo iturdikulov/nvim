@@ -55,12 +55,11 @@ return {
 				{ "mason-org/mason.nvim", opts = {} },
 				"neovim/nvim-lspconfig",
 			},
-			opts = {
-				automatic_enable = false,
-				ensure_installed = {
+			opts = (function()
+				local ensure_installed = {
 					"lua_ls",
 					"stylua",
-                    "powershell_es",
+					"powershell_es",
 					"basedpyright",
 					"ansiblels",
 					"vue_ls",
@@ -69,11 +68,10 @@ return {
 					"cssls",
 					"ruff",
 					"vtsls",
-                    "ts_ls",
+					"ts_ls",
 					-- "gopls",
-                    -- "sqls",
+					-- "sqls",
 					"rust_analyzer",
-                    "asm_lsp",
 					"bashls",
 					"markdown_oxide",
 					"texlab",
@@ -82,8 +80,15 @@ return {
 					"yamlls",
 					"dockerls",
 					"clangd",
-				},
-			},
+				}
+				if not require("config.platform").is_windows then
+					table.insert(ensure_installed, "asm_lsp")
+				end
+				return {
+					automatic_enable = false,
+					ensure_installed = ensure_installed,
+				}
+			end)(),
 		},
 		{
 			"nanotee/sqls.nvim",
@@ -353,9 +358,11 @@ return {
 			"clangd",
 			"gdscript",
 			"gopls",
-			"asm_lsp",
 			"dockerls",
 		}
+		if not is_windows then
+			table.insert(base_config_lsp, "asm_lsp")
+		end
 
 		for _, lsp in ipairs(base_config_lsp) do
 			vim.lsp.config(lsp, {

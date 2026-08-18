@@ -518,6 +518,7 @@ return {
 
 	{
 		"igorlfs/nvim-dap-view",
+		enabled = not require("config.platform").is_windows,
 		opts = {
 			winbar = {
 				show_keymap_hints = false,

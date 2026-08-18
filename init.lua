@@ -9,7 +9,7 @@ if not platform.is_windows then
 else
     vim.schedule(function()
         vim.notify(
-            "Windows compatibility mode: skipped config.gnupg, plugins: devcontainers.nvim, nvim-dap, nvim-lint, sniprun",
+            "Windows compatibility mode: skipped config.gnupg, plugins: devcontainers.nvim, nvim-dap, nvim-dap-view, nvim-lint, sniprun, asm_lsp",
             vim.log.levels.INFO
         )
     end)

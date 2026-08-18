@@ -39,6 +39,134 @@ plugins available, with a focus on:
    nvim
    ```
 
+## Windows Setup
+
+This config supports Windows, but some Linux-specific parts are intentionally
+disabled on startup (you will see a notification about that).
+
+Disabled on Windows:
+
+- `config.gnupg`
+- `devcontainers.nvim`
+- `nvim-dap` (and related DAP plugins from `lua/plugins/dap.lua`)
+- `nvim-dap-view`
+- `nvim-lint`
+- `sniprun`
+- `asm_lsp`
+
+### Windows (PowerShell)
+
+#### Fast install with winget
+
+If `winget` is missing on your system, install/update it first:
+
+- Microsoft docs: [Install winget](https://learn.microsoft.com/windows/package-manager/winget/#install-winget)
+- Microsoft Store: [App Installer](https://apps.microsoft.com/detail/9nblggh4nns1)
+- PowerShell Gallery package: [winget-install](https://www.powershellgallery.com/packages/winget-install)
+
+Install from PowerShell Gallery:
+
+```powershell
+Install-Script -Name winget-install -Scope CurrentUser
+Get-InstalledScript -Name winget-install | Select-Object Name, Version, InstalledLocation
+& "$( (Get-InstalledScript -Name winget-install).InstalledLocation )\winget-install.ps1"
+```
+
+If script execution is blocked:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Install-Script -Name winget-install -Scope CurrentUser
+Get-InstalledScript -Name winget-install | Select-Object Name, Version, InstalledLocation
+& "$( (Get-InstalledScript -Name winget-install).InstalledLocation )\winget-install.ps1"
+```
+
+If `winget-install.ps1` is still not recognized:
+
+```powershell
+$env:PATH += ";$HOME\Documents\WindowsPowerShell\Scripts"
+winget-install.ps1
+```
+
+Or run it by full path:
+
+```powershell
+& "$HOME\Documents\WindowsPowerShell\Scripts\winget-install.ps1"
+```
+
+Run PowerShell as a regular user and install core tools:
+
+```powershell
+winget install --id Neovim.Neovim -e
+winget install --id Git.Git -e
+winget install --id BurntSushi.ripgrep.MSVC -e
+winget install --id OpenJS.NodeJS.LTS -e
+winget install --id Python.Python.3.12 -e
+```
+
+Or in a single line:
+
+```powershell
+winget install --id Neovim.Neovim -e; winget install --id Git.Git -e; winget install --id BurntSushi.ripgrep.MSVC -e; winget install --id OpenJS.NodeJS.LTS -e; winget install --id Python.Python.3.12 -e
+```
+
+After install, restart terminal and verify:
+
+```powershell
+nvim --version
+git --version
+rg --version
+node --version
+python --version
+```
+
+Then install Tree-sitter CLI (needed by `nvim-treesitter`):
+
+```powershell
+npm install -g tree-sitter-cli
+tree-sitter --version
+```
+
+1. Install required tools:
+   - Neovim 0.11+
+   - Git for Windows
+   - `ripgrep` (`rg`)
+   - `node` + `npm`
+   - `tree-sitter-cli` (`npm install -g tree-sitter-cli`)
+   - `python` (optional, but useful for many plugins/LSPs)
+2. Clone config:
+   ```powershell
+   git clone https://github.com/your-username/your-nvim-config.git "$env:LOCALAPPDATA\nvim"
+   ```
+3. Start Neovim:
+   ```powershell
+   nvim
+   ```
+
+#### Update config
+
+Pull the latest config and sync plugins:
+
+```powershell
+git -C "$env:LOCALAPPDATA\nvim" pull
+nvim --headless "+Lazy! sync" +qa
+```
+
+Then restart Neovim.
+
+If you only need the git update (plugins already installed):
+
+```powershell
+git -C "$env:LOCALAPPDATA\nvim" pull
+```
+
+### Notes for Windows users
+
+- `Leader+O` uses `vim.ui.open`, so opening files in external apps is
+  cross-platform.
+- If you want DAP/lint/sniprun on Windows later, they can be re-enabled with
+  dedicated Windows-safe setup (separate plugin specs or OS checks).
+
 ## LSP and formatters setup
 
 I do not use any package managers inside Neovim (mason) to install LSP servers
