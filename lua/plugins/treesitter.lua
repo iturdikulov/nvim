@@ -17,6 +17,9 @@ return {
 		-- it pick cl.exe even when cl is not on PATH. Prefer zig via a wrapper.
 		if is_windows and (vim.env.CC == nil or vim.env.CC == "") then
 			if vim.fn.executable("zig") == 1 then
+				-- Zig 0.16 rejects LLVM triples like x86_64-pc-windows-msvc.
+				vim.env.ZIG_CC_TARGET = jit.arch == "arm64" and "aarch64-windows-gnu"
+					or "x86_64-windows-gnu"
 				vim.env.CC = vim.fs.joinpath(vim.fn.stdpath("config"), "scripts", "zig-cc.cmd")
 			elseif vim.fn.executable("gcc") == 1 then
 				vim.env.CC = "gcc"
@@ -26,6 +29,8 @@ return {
 		end
 
 		require("nvim-treesitter").setup(opts)
+		-- jsonc parser is flaky on Windows; reuse json for jsonc buffers.
+		vim.treesitter.language.register("json", "jsonc")
 		require("nvim-treesitter").install({
 			"comment",
 			"bash",
@@ -41,7 +46,6 @@ return {
 			"gdscript",
 			"javascript",
 			"json",
-			"jsonc",
 			"lua",
 			"make",
 			"markdown",
