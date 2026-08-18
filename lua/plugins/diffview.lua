@@ -1,20 +1,43 @@
-local df_open = false
-
 return {
 	{
-		"sindrets/diffview.nvim",
+		"dlyongemallo/diffview-plus.nvim",
+		version = "*",
+		main = "diffview",
+		opts = {
+            enhanced_diff_hl = false,
+            view = {
+                default = {
+                    focus_diff = true,
+                    layout = "diff1_inline",
+                },
+            },
+            inline = {
+                style = "unified",
+                deletion_treesitter = true,
+            },
+            file_panel = {
+                win_config = {
+                    width = 23,
+                },
+            },
+		},
+		cmd = {
+			"DiffviewOpen",
+			"DiffviewToggle",
+			"DiffviewDiffFiles",
+			"DiffviewMergeFiles",
+			"DiffviewDiffDirs",
+			"DiffviewFileHistory",
+			"DiffviewClose",
+			"DiffviewFocusFiles",
+			"DiffviewToggleFiles",
+			"DiffviewRefresh",
+			"DiffviewLog",
+		},
 		keys = {
 			{
 				"<leader>gd",
-				function()
-					if df_open then
-						vim.cmd("DiffviewClose")
-						df_open = false
-					else
-						vim.cmd("DiffviewOpen")
-						df_open = true
-					end
-				end,
+				"<cmd>DiffviewToggle<CR>",
 				desc = "Toggle Diffview",
 			},
 			{

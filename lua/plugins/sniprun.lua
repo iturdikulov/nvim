@@ -1,5 +1,6 @@
 return {
     "michaelb/sniprun",
+    enabled = not require("config.platform").is_windows,
     branch = "master",
 
     build = "sh install.sh",

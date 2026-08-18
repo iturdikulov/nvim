@@ -14,6 +14,12 @@ return {
                     "branch",
                     "diff",
                     "diagnostics",
+                    {
+                        function()
+                            return vim.g.devcontainer_lsp_status and "🐋" or ""
+                        end,
+                        color = { fg = "#E5C07B" },
+                    },
                     function()
                         return (ok and _99 and _99.get_model()) or ""
                     end,

@@ -11,6 +11,45 @@ return {
 		"saadparwaiz1/cmp_luasnip",
 		"f3fora/cmp-spell",
 		{
+			"jedrzejboczar/devcontainers.nvim",
+			enabled = not require("config.platform").is_windows,
+			dependencies = { "miversen33/netman.nvim" },
+			config = function()
+				require("devcontainers").setup()
+
+				local cli = require("devcontainers.cli")
+				local devcontainer_up = cli.devcontainer_up
+				cli.devcontainer_up = function(...)
+					local args = { ... }
+					local notify = vim.notify
+					vim.g.devcontainer_lsp_status = true
+					vim.cmd.redrawstatus()
+					vim.notify = function(message, level, opts)
+						if message:match("^Starting devcontainer") then
+							if message:match(": FAILED:") then
+								vim.g.devcontainer_lsp_status = nil
+								vim.cmd.redrawstatus()
+							else
+								return {}
+							end
+						end
+						return notify(message, level, opts)
+					end
+
+					local ok, result = xpcall(function()
+						return devcontainer_up(unpack(args))
+					end, debug.traceback)
+					vim.notify = notify
+					vim.g.devcontainer_lsp_status = nil
+					vim.cmd.redrawstatus()
+					if not ok then
+						error(result)
+					end
+					return result
+				end
+			end,
+		},
+		{
 			"mason-org/mason-lspconfig.nvim",
 			dependencies = {
 				{ "mason-org/mason.nvim", opts = {} },
@@ -21,13 +60,14 @@ return {
 				ensure_installed = {
 					"lua_ls",
 					"stylua",
-                    "basedpyright",
+                    "powershell_es",
+					"basedpyright",
+					"ansiblels",
 					"vue_ls",
 					"emmet_language_server",
 					"pylsp",
 					"cssls",
 					"ruff",
-					"biome",
 					"vtsls",
                     "ts_ls",
 					-- "gopls",
@@ -39,9 +79,8 @@ return {
 					"texlab",
 					"jsonls",
 					"html",
-					"eslint",
 					"yamlls",
-					"docker_language_server",
+					"dockerls",
 					"clangd",
 				},
 			},
@@ -125,6 +164,28 @@ return {
 			end
 		end, {})
 
+		local function show_lsp_commands()
+			local lines = {}
+			for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
+				local devcontainers = client.config._devcontainers or {}
+				table.insert(lines, ("# %s"):format(client.name))
+				table.insert(lines, ("root: %s"):format(client.config.root_dir or "?"))
+				table.insert(lines, ("cmd: %s"):format(vim.inspect(devcontainers.cmd or client.config.cmd)))
+				if devcontainers.original_cmd then
+					table.insert(lines, ("original: %s"):format(vim.inspect(devcontainers.original_cmd)))
+				end
+			end
+			if #lines == 0 then
+				lines = { "No LSP clients attached to the current buffer" }
+			end
+			vim.notify(table.concat(lines, "\n"), vim.log.levels.INFO, { timeout = 14000 })
+		end
+
+		vim.keymap.set("n", "<leader>Li", show_lsp_commands, {
+			desc = "Show LSP commands",
+			silent = true,
+		})
+
 		local cmp = require("cmp")
 		local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
@@ -191,23 +252,109 @@ return {
 			}),
 		})
 
+		if not vim.g.lsp_strip_svg_images then
+			local convert_markdown = vim.lsp.util.convert_input_to_markdown_lines
+			vim.lsp.util.convert_input_to_markdown_lines = function(contents, ...)
+				local lines = convert_markdown(contents, ...)
+				for index, line in ipairs(lines) do
+					lines[index] = line:gsub("!%[[^%]]*%]%([^)]*[Ss][Vv][Gg][^)]*%)", "")
+				end
+				return lines
+			end
+			vim.g.lsp_strip_svg_images = true
+		end
+
 		-- LSP
 		local capabilities = vim.tbl_deep_extend(
 			"force",
 			vim.lsp.protocol.make_client_capabilities(),
 			require("cmp_nvim_lsp").default_capabilities()
 		)
+		local has_devcontainers, devcontainers = pcall(require, "devcontainers")
+		local is_windows = require("config.platform").is_windows
+		local home = vim.uv.os_homedir()
+		local container_lsp_roots = {
+			[vim.fs.normalize(vim.fs.joinpath(home, "Desktop", "atd", "az-containers"))] = true,
+		}
+		local register_capability = vim.lsp.handlers["client/registerCapability"]
+
+		-- TODO: Remove when devcontainers.nvim handles container-only watcher baseUri values.
+		local function register_container_capability(err, params, ctx, config)
+			local client = vim.lsp.get_client_by_id(ctx.client_id)
+			local root_dir = client and client.config.root_dir
+			if root_dir and vim.uv.fs_stat(root_dir .. "/.devcontainer") then
+				params = vim.deepcopy(params)
+				for _, registration in ipairs(params.registrations or {}) do
+					if registration.method == "workspace/didChangeWatchedFiles" then
+						local options = registration.registerOptions or {}
+						options.watchers = vim.tbl_filter(function(watcher)
+							local pattern = watcher.globPattern
+							local base_uri = type(pattern) == "table" and pattern.baseUri or nil
+							base_uri = type(base_uri) == "table" and base_uri.uri or base_uri
+							return type(base_uri) ~= "string"
+								or not base_uri:match("^file:")
+								or vim.uv.fs_stat(vim.uri_to_fname(base_uri)) ~= nil
+						end, options.watchers or {})
+						registration.registerOptions = options
+					end
+				end
+			end
+			return register_capability(err, params, ctx, config)
+		end
+
+		local function configure_container_lsp(name, config)
+			local default_config = vim.lsp.config[name]
+			local default_root_dir = default_config.root_dir
+			local default_root_markers = default_config.root_markers
+			config = config or {}
+			local container_cmd = has_devcontainers
+					and devcontainers.lsp_cmd(config.container_cmd or default_config.cmd)
+				or nil
+			config.container_cmd = nil
+			config.cmd = function(dispatchers, client_config)
+				local root_dir = client_config.root_dir and vim.fs.normalize(client_config.root_dir)
+				if container_cmd and root_dir and container_lsp_roots[root_dir] then
+					return container_cmd(dispatchers, client_config)
+				end
+				local cmd = config.cmd_local or default_config.cmd
+				if type(cmd) == "function" then
+					return cmd(dispatchers, client_config)
+				end
+				return vim.lsp.rpc.start(cmd, dispatchers)
+			end
+			config.cmd_local = nil
+			config.handlers = vim.tbl_extend("force", config.handlers or {}, {
+				["client/registerCapability"] = register_container_capability,
+			})
+			config.root_dir = function(bufnr, on_dir)
+				local container_root = vim.fs.root(bufnr, ".devcontainer")
+				if container_root then
+					on_dir(container_root)
+					return
+				end
+
+			if type(default_root_dir) == "function" then
+				return default_root_dir(bufnr, on_dir)
+			end
+			if default_root_markers then
+				on_dir(vim.fs.root(bufnr, default_root_markers))
+				return
+			end
+			if default_root_dir then
+				on_dir(default_root_dir)
+				return
+			end
+			on_dir(nil)
+		end
+			vim.lsp.config(name, config)
+		end
 
 		local base_config_lsp = {
 			"clangd",
 			"gdscript",
-			"ruff",
-			"biome",
 			"gopls",
-			"bashls",
 			"asm_lsp",
 			"dockerls",
-			"yamlls",
 		}
 
 		for _, lsp in ipairs(base_config_lsp) do
@@ -217,7 +364,58 @@ return {
 			vim.lsp.enable(lsp)
 		end
 
-		local vue_language_server_path = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
+		vim.lsp.config("ansiblels", {
+			capabilities = capabilities,
+			filetypes = { "yaml", "yaml.ansible" },
+			root_dir = function(bufnr, on_dir)
+				on_dir(vim.fs.root(bufnr, { "ansible.cfg", ".ansible-lint" }))
+			end,
+			before_init = function(_, config)
+				local root = config.root_dir
+				local venv = root and vim.fs.joinpath(root, ".venv") or nil
+				local bin_dir = is_windows and "Scripts" or "bin"
+				if not venv or vim.fn.executable(vim.fs.joinpath(venv, bin_dir, "python")) ~= 1 then
+					return
+				end
+				config.settings.ansible.python.interpreterPath = vim.fs.joinpath(venv, bin_dir, "python")
+				config.settings.ansible.ansible.path = vim.fs.joinpath(venv, bin_dir, "ansible")
+				config.settings.ansible.validation.lint.path = vim.fs.joinpath(venv, bin_dir, "ansible-lint")
+			end,
+			settings = {
+				ansible = {
+					python = {
+						interpreterPath = "python",
+					},
+					ansible = {
+						path = "ansible",
+					},
+					validation = {
+						lint = {
+							path = "ansible-lint",
+						},
+					},
+				},
+			},
+		})
+		vim.lsp.enable("ansiblels")
+
+		-- JS/TS/Vue lint: nvim-lint + eslint_d (host); format: conform + prettier
+		local container_base_lsp = {
+			{ name = "bashls" },
+			{ name = "yamlls", cmd = { "yaml-language-server", "--stdio" } },
+			{ name = "jsonls", cmd = { "vscode-json-language-server", "--stdio" } },
+		}
+
+		for _, server in ipairs(container_base_lsp) do
+			configure_container_lsp(server.name, {
+				capabilities = capabilities,
+				container_cmd = server.cmd,
+				filetypes = server.filetypes,
+			})
+			vim.lsp.enable(server.name)
+		end
+
+		local local_vue_language_server_path = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
 		local tsserver_filetypes = {
 			"typescript",
 			"javascript",
@@ -227,13 +425,20 @@ return {
 		}
 		local vue_plugin = {
 			name = "@vue/typescript-plugin",
-			location = vue_language_server_path,
+			location = local_vue_language_server_path,
 			languages = { "vue" },
 			configNamespace = "typescript",
 		}
 
 		local vtsls_config = {
             capabilities = capabilities,
+			before_init = function(_, config)
+				local in_devcontainer = config.root_dir
+					and vim.uv.fs_stat(config.root_dir .. "/.devcontainer") ~= nil
+				config.settings.vtsls.tsserver.globalPlugins[1].location = in_devcontainer
+					and "/usr/local/lib/node_modules/@vue/language-server"
+					or local_vue_language_server_path
+			end,
 			settings = {
 				vtsls = {
 					tsserver = {
@@ -260,10 +465,10 @@ return {
         local vue_ls_config = {
             capabilities = capabilities,
 		}
-		vim.lsp.config("vtsls", vtsls_config)
-		vim.lsp.config("vue_ls", vue_ls_config)
+		configure_container_lsp("vtsls", vtsls_config)
+		configure_container_lsp("vue_ls", vue_ls_config)
 		vim.lsp.config("ts_ls", ts_ls_config)
-		vim.lsp.enable({ "vtsls", "vue_ls" }) -- If using `ts_ls` replace `vtsls` to `ts_ls`
+		vim.lsp.enable({ "vue_ls", "vtsls" }) -- If using `ts_ls` replace `vtsls` to `ts_ls`
 
 		vim.lsp.config("texlab", {
 			capabilities = capabilities,
@@ -327,7 +532,7 @@ return {
 			},
 		})
 
-		vim.lsp.config("basedpyright", {
+		configure_container_lsp("basedpyright", {
 			capabilities = basedpyrightCapabilities,
 			settings = {
 				basedpyright = {
@@ -402,20 +607,20 @@ return {
 		})
 		vim.lsp.enable("basedpyright")
 
-		vim.lsp.config("pylsp", {
+		configure_container_lsp("pylsp", {
 			capabilities = capabilities,
 			on_attach = function(client)
 				-- Disable capabilities in favor to basedpyright
 				local disabled_capabilities = {
 					"documentFormattingProvider",
-					"documentHighlightProvider",
-					"foldingRangeProvider",
-					"codeLensProvider",
-					"typeDefinitionProvider",
-					"documentSymbolProvider",
-					"renameProvider",
-					"hoverProvider",
-					"signatureHelpProvider",
+						"documentHighlightProvider",
+						"foldingRangeProvider",
+						"codeLensProvider",
+						"typeDefinitionProvider",
+						"documentSymbolProvider",
+						"renameProvider",
+						"hoverProvider",
+						"signatureHelpProvider",
 					"definitionProvider",
 					"referencesProvider",
 					"completionProvider",
@@ -451,6 +656,11 @@ return {
 		})
 		vim.lsp.enable("pylsp")
 
+		configure_container_lsp("ruff", {
+			capabilities = capabilities,
+		})
+		vim.lsp.enable("ruff")
+
 		vim.lsp.config("lua_ls", {
 			capabilities = capabilities,
 			settings = {
@@ -461,6 +671,25 @@ return {
 			},
 		})
 		vim.lsp.enable("lua_ls")
+
+		vim.lsp.config("powershell_es", {
+			capabilities = capabilities,
+			bundle_path = vim.fn.expand("$MASON/packages/powershell-editor-services"),
+			shell = "pwsh",
+			settings = {
+				powershell = {
+					scriptAnalysis = {
+						enable = true,
+						settingsPath = vim.fs.joinpath(
+							vim.fn.stdpath("config"),
+							"powershell",
+							"PSScriptAnalyzerSettings.psd1"
+						),
+					},
+				},
+			},
+		})
+		vim.lsp.enable("powershell_es")
 
 		vim.lsp.config("rust_analyzer", {
 			-- Server-specific settings. See `:help lsp-quickstart`
@@ -535,7 +764,11 @@ return {
 
 		vim.lsp.config("sqls", {
 			capabilities = capabilities,
-			cmd = { "sqls", "-config", "/home/inom/.config/sqls/config.yml" },
+			cmd = {
+				"sqls",
+				"-config",
+				vim.fs.joinpath(vim.fn.stdpath("config"), "sqls", "config.yml"),
+			},
 		})
 		vim.lsp.enable("sqls")
 
@@ -573,13 +806,8 @@ return {
 				end
 
 				map("K", function()
-					vim.lsp.buf.hover {
-						border = "single",
-						max_height = 25,
-						max_width = 130,
-						close_events = { "CursorMoved", "LSPDetach" },
-					}
-				end)
+					vim.lsp.buf.hover({ border = "single", max_width = 80 })
+				end, "show hover")
 
 				map("gd", vim.lsp.buf.definition, "show definitions")
 				map("go", vim.lsp.buf.workspace_symbol, "workspace symbol")

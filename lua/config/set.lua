@@ -47,7 +47,7 @@ vim.wo.listchars = "tab:>-,extends:>,precedes:<,nbsp:␣"
 vim.opt.splitright = true
 
 -- Custom highlighting in diff mode
-vim.opt.diffopt:append({ "linematch:50" })
+vim.opt.diffopt:append({ "algorithm:histogram", "linematch:50" })
 
 -- Open diff in vertical split
 vim.opt.diffopt:append({ "vertical" })
@@ -108,7 +108,9 @@ vim.opt.titlestring = "%{expand('%:p:h:t')}"
 vim.g.nerw_keepdir = 0 --  avoid the move files error.
 vim.g.netrw_browse_split = 0
 vim.g.netrw_winsize = 25
-vim.g.netrw_localcopydircmd = "cp -r" -- fix netrw recursive dir copy
+if not require("config.platform").is_windows then
+    vim.g.netrw_localcopydircmd = "cp -r" -- fix netrw recursive dir copy
+end
 
 -- osc52 Clipboard
 vim.g.clipboard = {
@@ -177,7 +179,7 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 
 -- make Neovim’s jobs use a login+interactive Zsh
 local zsh = vim.fn.exepath("zsh")
-if zsh ~= "" then
+if zsh ~= "" and not require("config.platform").is_windows then
     vim.opt.shell = zsh
     vim.opt.shellcmdflag = "-lic"
 end

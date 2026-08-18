@@ -93,7 +93,9 @@ vim.keymap.set(
 )
 
 -- Make current file executable
-vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true })
+if not require("config.platform").is_windows then
+    vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true })
+end
 
 vim.keymap.set('n', '<leader>!', function()
     local cmd = vim.fn.input('Run Shell: ')
@@ -119,13 +121,10 @@ vim.keymap.set('n', '<leader>fp', function()
     vim.fn.setreg('+', text)
 end, {desc = 'Yank file:line'})
 
--- Open file in external program (xdg-open)
-vim.keymap.set(
-    "n",
-    "<leader>O",
-    "<cmd>!xdg-open %<CR>",
-    { silent = true, desc = "Open current file with xdg-open" }
-)
+-- Open file in external program
+vim.keymap.set("n", "<leader>O", function()
+    vim.ui.open(vim.fn.expand("%:p"))
+end, { silent = true, desc = "Open current file with system default app" })
 
 --- Open file in obsidian, file is current buffer name without .md extension
 vim.keymap.set("n", "<leader>to", function()
@@ -210,22 +209,18 @@ vim.keymap.set(
     { desc = "Close all buffers except current" }
 )
 
--- Reload Config
-function _G.ReloadConfig()
-    for name, _ in pairs(package.loaded) do
-        if name:match("^user") and not name:match("nvim-tree") then
-            package.loaded[name] = nil
-        end
-    end
-
-    dofile(vim.env.MYVIMRC)
-    vim.notify("Nvim configuration reloaded!", vim.log.levels.INFO)
+-- Полный перезапуск не оставляет старые Lua-модули и обработчики плагинов.
+local function restartNvim()
+    local session = vim.fn.stdpath("state") .. "/restart-session.vim"
+    vim.cmd("mksession! " .. vim.fn.fnameescape(session))
+    vim.cmd("restart source " .. vim.fn.fnameescape(session))
 end
+
 vim.keymap.set(
     "n",
     "<leader>R",
-    "<cmd>lua ReloadConfig()<CR>",
-    { desc = "Reload nvim config" }
+    restartNvim,
+    { desc = "Restart Neovim" }
 )
 
 -- requires some external tools
