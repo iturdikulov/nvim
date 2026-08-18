@@ -127,16 +127,78 @@ npm install -g tree-sitter-cli
 tree-sitter --version
 ```
 
+#### C compiler for nvim-treesitter
+
+`tree-sitter-cli` only generates/builds parsers. On Windows you also need a C
+compiler. Without it, install fails with `tree-sitter build` / `parser.so` errors.
+
+**Recommended:** install [Zig](https://ziglang.org/download/) manually. No Windows
+SDK, works when winget says `NoApplicableInstallers`. This config sets `CC` to
+`zig` when `cl.exe` is not on PATH.
+
+x64 PowerShell (user PATH, no admin required):
+
+```powershell
+$ver = "0.16.0"
+$zip = "$env:TEMP\zig-x86_64-windows-$ver.zip"
+$dir = "$env:LOCALAPPDATA\zig"
+curl.exe -L "https://ziglang.org/download/$ver/zig-x86_64-windows-$ver.zip" -o $zip
+Expand-Archive -Path $zip -DestinationPath $dir -Force
+$zigHome = Join-Path $dir "zig-x86_64-windows-$ver"
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    [Environment]::GetEnvironmentVariable("Path", "User") + ";$zigHome",
+    "User"
+)
+$env:PATH += ";$zigHome"
+zig version
+```
+
+Newer builds and ARM/32-bit zips: [ziglang.org/download](https://ziglang.org/download/).
+Official PATH notes: [Getting Started](https://ziglang.org/learn/getting-started/).
+
+After that, **restart the terminal** (or keep using the current session where
+`$env:PATH` was updated).
+
+To remove Visual Studio Build Tools if you already installed them:
+
+```powershell
+winget list --name "Visual Studio"
+winget uninstall -e --id Microsoft.VisualStudio.2022.BuildTools
+```
+
+If the id differs, uninstall whatever `winget list` shows, for example:
+
+```powershell
+winget uninstall -e --id Microsoft.VisualStudio.BuildTools
+```
+
+You can also uninstall from **Apps > Installed apps** or Visual Studio Installer.
+Restart the terminal after uninstall so leftover `cl.exe` / VS env vars are gone.
+
+**Alternative:** MSVC via Visual Studio Build Tools (`cl.exe`). Needs Windows SDK
+and several GB. Run PowerShell as Administrator:
+
+```powershell
+winget install -e --id Microsoft.VisualStudio.2022.BuildTools --accept-package-agreements --accept-source-agreements --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
+
+Then start Neovim from **Developer PowerShell for VS**, because `cl` is not on a
+normal PATH.
+
+Do not mix MinGW/MSYS gcc with MSVC. Pick Zig **or** MSVC.
+
 1. Install required tools:
    - Neovim 0.11+
    - Git for Windows
    - `ripgrep` (`rg`)
    - `node` + `npm`
    - `tree-sitter-cli` (`npm install -g tree-sitter-cli`)
+   - C compiler for parsers: `zig` or MSVC `cl.exe`
    - `python` (optional, but useful for many plugins/LSPs)
 2. Clone config:
    ```powershell
-   git clone https://github.com/your-username/your-nvim-config.git "$env:LOCALAPPDATA\nvim"
+   git clone https://github.com/iturdikulov/nvim.git "$env:LOCALAPPDATA\nvim"
    ```
 3. Start Neovim:
    ```powershell

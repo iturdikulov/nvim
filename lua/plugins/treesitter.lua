@@ -12,6 +12,19 @@ return {
 		indent = { enable = true },
 	},
 	config = function(_, opts)
+		local is_windows = require("config.platform").is_windows
+		-- tree-sitter CLI uses the cc crate. Leftover VS Build Tools still make
+		-- it pick cl.exe even when cl is not on PATH. Prefer zig via a wrapper.
+		if is_windows and (vim.env.CC == nil or vim.env.CC == "") then
+			if vim.fn.executable("zig") == 1 then
+				vim.env.CC = vim.fs.joinpath(vim.fn.stdpath("config"), "scripts", "zig-cc.cmd")
+			elseif vim.fn.executable("gcc") == 1 then
+				vim.env.CC = "gcc"
+			elseif vim.fn.executable("clang") == 1 then
+				vim.env.CC = "clang"
+			end
+		end
+
 		require("nvim-treesitter").setup(opts)
 		require("nvim-treesitter").install({
 			"comment",
@@ -45,7 +58,7 @@ return {
 			"vimdoc",
 			"yaml",
 			"zig",
-		})
+		}, is_windows and { max_jobs = 1 } or nil)
 	end,
 	-- config = function()
 	--     -- Enable treesitter folding
