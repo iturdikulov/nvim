@@ -1,6 +1,9 @@
 vim.opt.colorcolumn = "80"
 vim.opt.textwidth = 0
 vim.opt.termguicolors = true
+if require("config.platform").is_windows then
+    vim.opt.guifont = "Iosevka Nerd Font:h12"
+end
 
 vim.opt.nu = true
 vim.opt.relativenumber = true

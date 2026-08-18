@@ -102,12 +102,13 @@ winget install --id Git.Git -e
 winget install --id BurntSushi.ripgrep.MSVC -e
 winget install --id OpenJS.NodeJS.LTS -e
 winget install --id Python.Python.3.12 -e
+winget install --id Microsoft.WindowsTerminal -e
 ```
 
 Or in a single line:
 
 ```powershell
-winget install --id Neovim.Neovim -e; winget install --id Git.Git -e; winget install --id BurntSushi.ripgrep.MSVC -e; winget install --id OpenJS.NodeJS.LTS -e; winget install --id Python.Python.3.12 -e
+winget install --id Neovim.Neovim -e; winget install --id Git.Git -e; winget install --id BurntSushi.ripgrep.MSVC -e; winget install --id OpenJS.NodeJS.LTS -e; winget install --id Python.Python.3.12 -e; winget install --id Microsoft.WindowsTerminal -e
 ```
 
 After install, restart terminal and verify:
@@ -228,6 +229,58 @@ git -C "$env:LOCALAPPDATA\nvim" pull
   cross-platform.
 - If you want DAP/lint/sniprun on Windows later, they can be re-enabled with
   dedicated Windows-safe setup (separate plugin specs or OS checks).
+
+#### Windows Terminal
+
+Use [Windows Terminal](https://learn.microsoft.com/windows/terminal/install)
+instead of the old `conhost` console: Unicode, Nerd Fonts, and `nvim` look
+correct there.
+
+```powershell
+winget install -e --id Microsoft.WindowsTerminal
+```
+
+Microsoft Store: [Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701)
+
+If winget says `NoApplicableInstallers` (typical on some Windows Server
+editions), use the Store link or the [GitHub releases](https://github.com/microsoft/terminal/releases).
+
+After install, open **Windows Terminal** and run `nvim` from a PowerShell tab.
+
+#### Nerd Font (icons)
+
+Statusline, dashboard, and file icons need a [Nerd Font](https://www.nerdfonts.com/).
+Without it you get empty boxes or question marks.
+
+Install Iosevka via the official
+[PowerShell installer](https://github.com/ryanoasis/nerd-fonts#option-5-powershell-installer):
+
+```powershell
+& ([scriptblock]::Create((iwr 'https://to.loredo.me/Install-NerdFont.ps1'))) -Name Iosevka
+```
+
+Interactive picker (choose the font in the menu):
+
+```powershell
+& ([scriptblock]::Create((iwr 'https://to.loredo.me/Install-NerdFont.ps1')))
+```
+
+Or as a PowerShell module:
+
+```powershell
+Install-PSResource -Name NerdFonts
+Import-Module -Name NerdFonts
+Install-NerdFont -Name 'Iosevka'
+```
+
+Then set the font:
+
+- **Windows Terminal:** Settings → your profile → Appearance → Font face →
+  `Iosevka Nerd Font` (or `IosevkaNFM`). Open a new tab.
+- **GUI Neovim** (`nvim-qt` / Neovide): this config sets
+  `guifont` to `Iosevka Nerd Font` on Windows.
+
+Restart the terminal after installing the font.
 
 ## LSP and formatters setup
 
