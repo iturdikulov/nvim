@@ -99,16 +99,15 @@ Run PowerShell as a regular user and install core tools:
 ```powershell
 winget install --id Neovim.Neovim -e
 winget install --id Git.Git -e
-winget install --id BurntSushi.ripgrep.MSVC -e
+winget install --id BurntSushi.ripgrep.GNU -e
 winget install --id OpenJS.NodeJS.LTS -e
 winget install --id Python.Python.3.12 -e
-winget install --id Microsoft.WindowsTerminal -e
 ```
 
 Or in a single line:
 
 ```powershell
-winget install --id Neovim.Neovim -e; winget install --id Git.Git -e; winget install --id BurntSushi.ripgrep.MSVC -e; winget install --id OpenJS.NodeJS.LTS -e; winget install --id Python.Python.3.12 -e; winget install --id Microsoft.WindowsTerminal -e
+winget install --id Neovim.Neovim -e; winget install --id Git.Git -e; winget install --id BurntSushi.ripgrep.GNU -e; winget install --id OpenJS.NodeJS.LTS -e; winget install --id Python.Python.3.12 -e
 ```
 
 After install, restart terminal and verify:
@@ -119,6 +118,25 @@ git --version
 rg --version
 node --version
 python --version
+```
+
+If `winget` says `NoApplicableInstallers` for ripgrep (common on Windows Server),
+install the portable zip:
+
+```powershell
+$ver = "15.2.0"
+$zip = "$env:TEMP\ripgrep.zip"
+$dir = "$env:LOCALAPPDATA\ripgrep"
+curl.exe -L "https://github.com/BurntSushi/ripgrep/releases/download/$ver/ripgrep-$ver-x86_64-pc-windows-gnu.zip" -o $zip
+Expand-Archive -Path $zip -DestinationPath $dir -Force
+$rgHome = Join-Path $dir "ripgrep-$ver-x86_64-pc-windows-gnu"
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    [Environment]::GetEnvironmentVariable("Path", "User") + ";$rgHome",
+    "User"
+)
+$env:PATH += ";$rgHome"
+rg --version
 ```
 
 Then install Tree-sitter CLI (needed by `nvim-treesitter`):
@@ -230,33 +248,32 @@ git -C "$env:LOCALAPPDATA\nvim" pull
 - If you want DAP/lint/sniprun on Windows later, they can be re-enabled with
   dedicated Windows-safe setup (separate plugin specs or OS checks).
 
-#### Windows Terminal
+#### Terminal (ConEmu)
 
-Use [Windows Terminal](https://learn.microsoft.com/windows/terminal/install)
-instead of the old `conhost` console: Unicode, Nerd Fonts, and `nvim` look
-correct there.
+Fast, no GPU (GDI). Works on Windows Server. [ConEmu](https://conemu.github.io/):
 
 ```powershell
-winget install -e --id Microsoft.WindowsTerminal
+winget install -e --id Maximus5.ConEmu
 ```
 
-Microsoft Store: [Windows Terminal](https://apps.microsoft.com/detail/9n0dx20hk701)
+Start with IosevkaTerm:
 
-If winget says `NoApplicableInstallers` (typical on some Windows Server
-editions), use the Store link or the [GitHub releases](https://github.com/microsoft/terminal/releases).
+```powershell
+& "$env:ProgramFiles\ConEmu\ConEmu64.exe" -font "IosevkaTerm Nerd Font"
+```
 
-After install, open **Windows Terminal** and run `nvim` from a PowerShell tab.
+Or Settings → Main → Font → `IosevkaTerm Nerd Font`. Then run `nvim` inside ConEmu.
 
 #### Nerd Font (icons)
 
 Statusline, dashboard, and file icons need a [Nerd Font](https://www.nerdfonts.com/).
 Without it you get empty boxes or question marks.
 
-Install Iosevka via the official
+Install IosevkaTerm (smaller terminal package) via the official
 [PowerShell installer](https://github.com/ryanoasis/nerd-fonts#option-5-powershell-installer):
 
 ```powershell
-& ([scriptblock]::Create((iwr 'https://to.loredo.me/Install-NerdFont.ps1'))) -Name Iosevka
+& ([scriptblock]::Create((iwr 'https://to.loredo.me/Install-NerdFont.ps1'))) -Name IosevkaTerm
 ```
 
 Interactive picker (choose the font in the menu):
@@ -270,15 +287,12 @@ Or as a PowerShell module:
 ```powershell
 Install-PSResource -Name NerdFonts
 Import-Module -Name NerdFonts
-Install-NerdFont -Name 'Iosevka'
+Install-NerdFont -Name 'IosevkaTerm'
 ```
 
-Then set the font:
-
-- **Windows Terminal:** Settings → your profile → Appearance → Font face →
-  `Iosevka Nerd Font` (or `IosevkaNFM`). Open a new tab.
-- **GUI Neovim** (`nvim-qt` / Neovide): this config sets
-  `guifont` to `Iosevka Nerd Font` on Windows.
+Then set the font in your terminal emulator to `IosevkaTerm Nerd Font` (or
+`IosevkaTermNFM`) and open a new window. GUI Neovim (`nvim-qt` / Neovide) uses
+`guifont = IosevkaTerm Nerd Font` on Windows.
 
 Restart the terminal after installing the font.
 

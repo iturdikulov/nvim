@@ -6,10 +6,32 @@ return {
     },
 
     config = function()
+        local is_windows = require("config.platform").is_windows
+        local rg = vim.fn.exepath("rg")
+
+        local find_command
+        if rg ~= "" then
+            find_command = { rg, "--files", "--color", "never" }
+            if not is_windows then
+                vim.list_extend(find_command, { "-L", "--sortr=modified" })
+            end
+        end
+
         require("telescope").setup({
+            defaults = rg ~= "" and {
+                vimgrep_arguments = {
+                    rg,
+                    "--color=never",
+                    "--no-heading",
+                    "--with-filename",
+                    "--line-number",
+                    "--column",
+                    "--smart-case",
+                },
+            } or nil,
             pickers = {
                 find_files = {
-                    find_command = { "rg", "--files", "-L", "--sortr=modified" },
+                    find_command = find_command,
                     mappings = {
                         n = {
                             ["cd"] = function(prompt_bufnr)
