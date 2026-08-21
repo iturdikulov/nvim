@@ -252,9 +252,12 @@ return {
 		{
 			"<leader>gG",
 			function()
-				Snacks.terminal.toggle(
-					"lazygit --git-dir=$HOME/.local/share/yadm/repo.git --work-tree=$HOME"
-				)
+				Snacks.lazygit({
+					args = {
+						"--git-dir=" .. vim.fn.expand("~/.local/share/yadm/repo.git"),
+						"--work-tree=" .. vim.fn.expand("~"),
+					},
+				})
 			end,
 			desc = "Yadm",
 		},
