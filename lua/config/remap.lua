@@ -10,13 +10,22 @@ vim.keymap.set(
 )
 
 -- Fix Ctrl-W in terminal mode
-vim.keymap.set('t','<C-W>', '<C-\\><C-n><C-W>')
+vim.keymap.set(
+    "t",
+    "<C-W>",
+    "<C-\\><C-n><C-W>",
+    { desc = "Window command from terminal" }
+)
 
-vim.keymap.set("n", "<C-d>", "<C-d>zz")
-vim.keymap.set("n", "<C-u>", "<C-u>zz")
+vim.keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Scroll down (keep cursor centered)" })vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Scroll up (keep cursor centered)" })
 
 -- NOTE: this keymap for term, in our case Ctrl-Backspace
-vim.keymap.set("i", "<C-H>", "<C-W>", { noremap = true })
+vim.keymap.set(
+    "i",
+    "<C-H>",
+    "<C-W>",
+    { noremap = true, desc = "Delete word before cursor" }
+)
 
 -- Save on :W, quit on :Q, this is workarounds for this cases, sometimes I type
 -- :W instead :w...
@@ -28,13 +37,18 @@ vim.api.nvim_create_user_command("Q", function()
 end, {})
 
 -- Use Meta-S for saving, also save in Insert mode
-vim.keymap.set("n", "<M-w>", ":update<CR>")
-vim.keymap.set("v", "<M-w>", "<C-c>:update<CR>")
-vim.keymap.set("i", "<M-w>", "<C-o>:update<CR>")
+vim.keymap.set("n", "<M-w>", ":update<CR>", { desc = "Save file" })
+vim.keymap.set("v", "<M-w>", "<C-c>:update<CR>", { desc = "Save file" })
+vim.keymap.set("i", "<M-w>", "<C-o>:update<CR>", { desc = "Save file" })
 
 -- Use different keys to increment number
 --- C-a I using for tmux prefix
-vim.keymap.set({ "n", "x" }, "<A-a>", "<C-a>")
+vim.keymap.set(
+    { "n", "x" },
+    "<A-a>",
+    "<C-a>",
+    { desc = "Increment number" }
+)
 
 -- Support gf for files with spaces
 vim.keymap.set("n", "gF", function()
@@ -56,45 +70,111 @@ vim.keymap.set("n", "gF", function()
 end, { desc = "gf files with spaces" })
 
 -- move lines
-vim.keymap.set("v", "<M-K>", ":m '<-2<CR>gv=gv")
-vim.keymap.set("v", "<M-J>", ":m '>+1<CR>gv=gv")
+vim.keymap.set(
+    "v",
+    "<M-K>",
+    ":m '<-2<CR>gv=gv",
+    { desc = "Move selection up" }
+)
+vim.keymap.set(
+    "v",
+    "<M-J>",
+    ":m '>+1<CR>gv=gv",
+    { desc = "Move selection down" }
+)
 
 -- save cursor on center on next/previous search and join lines
-vim.keymap.set("n", "n", "nzzzv")
-vim.keymap.set("n", "N", "Nzzzv")
-vim.keymap.set("n", "J", "mzJ`z")
+vim.keymap.set("n", "n", "nzzzv", { desc = "Next search match (centered)" })
+vim.keymap.set("n", "N", "Nzzzv", { desc = "Prev search match (centered)" })
+vim.keymap.set("n", "J", "mzJ`z", { desc = "Join lines (keep cursor)" })
 
 -- greatest remap ever, to replace selection with default register (yanked text)
-vim.keymap.set("x", "<leader>p", [["_dP]])
+vim.keymap.set(
+    "x",
+    "<leader>p",
+    [["_dP]],
+    { desc = "Paste over selection (no yank)" }
+)
 
 -- next greatest remap ever : asbjornHaland
 -- integrate system clipboard with <leader>y
-vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]])
-vim.keymap.set("n", "<leader>Y", [["+Y]])
+vim.keymap.set(
+    { "n", "v" },
+    "<leader>y",
+    [["+y]],
+    { desc = "Yank to system clipboard" }
+)
+vim.keymap.set(
+    "n",
+    "<leader>Y",
+    [["+Y]],
+    { desc = "Yank line to system clipboard" }
+)
 
 -- special paste, which ignore delete and cut commands
-vim.keymap.set({ "n", "v" }, ",p", "0p")
-vim.keymap.set({ "n", "v" }, ",P", "0P")
+vim.keymap.set(
+    { "n", "v" },
+    ",p",
+    "0p",
+    { desc = "Paste from yank register" }
+)
+vim.keymap.set(
+    { "n", "v" },
+    ",P",
+    "0P",
+    { desc = "Paste before from yank register" }
+)
 
 -- delete to void register (without copy to clipboard)
-vim.keymap.set({ "n", "v" }, "<leader>D", [["_d]])
+vim.keymap.set(
+    { "n", "v" },
+    "<leader>D",
+    [["_d]],
+    { desc = "Delete to void register" }
+)
 
 -- Quickfix list navigation
-vim.keymap.set("n", "<leader>j", "<cmd>cnext<CR>zz")
-vim.keymap.set("n", "<leader>k", "<cmd>cprev<CR>zz")
-vim.keymap.set("n", "<leader>K", "<cmd>lnext<CR>zz")
-vim.keymap.set("n", "<leader>J", "<cmd>lprev<CR>zz")
+vim.keymap.set(
+    "n",
+    "<leader>j",
+    "<cmd>cnext<CR>zz",
+    { desc = "Next quickfix item" }
+)
+vim.keymap.set(
+    "n",
+    "<leader>k",
+    "<cmd>cprev<CR>zz",
+    { desc = "Prev quickfix item" }
+)
+vim.keymap.set(
+    "n",
+    "<leader>K",
+    "<cmd>lnext<CR>zz",
+    { desc = "Next location list item" }
+)
+vim.keymap.set(
+    "n",
+    "<leader>J",
+    "<cmd>lprev<CR>zz",
+    { desc = "Prev location list item" }
+)
 
 -- Replace word under cursor -> send to command mode
 vim.keymap.set(
     "n",
     "<leader>/",
-    [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]]
+    [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]],
+    { desc = "Substitute word under cursor" }
 )
 
 -- Make current file executable
 if not require("config.platform").is_windows then
-    vim.keymap.set("n", "<leader>X", "<cmd>!chmod +x %<CR>", { silent = true })
+    vim.keymap.set(
+        "n",
+        "<leader>X",
+        "<cmd>!chmod +x %<CR>",
+        { silent = true, desc = "Make file executable" }
+    )
 end
 
 vim.keymap.set('n', '<leader>!', function()
@@ -106,7 +186,12 @@ vim.keymap.set('n', '<leader>!', function()
  
     -- Set a buffer-local mapping so 'q' closes this specific terminal window
     local buf = vim.api.nvim_get_current_buf()
-    vim.keymap.set('n', 'q', '<cmd>bd!<CR>', { buffer = buf, silent = true })
+    vim.keymap.set(
+        "n",
+        "q",
+        "<cmd>bd!<CR>",
+        { buffer = buf, silent = true, desc = "Close command terminal" }
+    )
  
     -- Automatically enter Terminal mode so you see the output/interact immediately
     vim.cmd('startinsert')
@@ -140,10 +225,17 @@ vim.keymap.set("n", "<leader>to", function()
 end, { desc = "open in obsidian" })
 
 -- Quickly Destsroy current buffer
-vim.keymap.set("n", "<M-x>", "<cmd>bd<CR>")
+vim.keymap.set("n", "<M-c>", function()
+    require("config.buffers").delete()
+end, { desc = "Close buffer" })
 
 -- Search on selected text
-vim.keymap.set("x", "g/", "<Esc>/\\%V")
+vim.keymap.set(
+    "x",
+    "g/",
+    "<Esc>/\\%V",
+    { desc = "Search within selection" }
+)
 
 -- Copy current file path to clipboard
 vim.keymap.set("n", "<leader>l", function()
@@ -152,20 +244,30 @@ vim.keymap.set("n", "<leader>l", function()
         ("'%s' was copied to clipboard"):format(vim.fn.getreg("+")),
         vim.log.levels.INFO
     )
-end, { silent = true })
+end, { silent = true, desc = "Yank relative file path" })
 
 ---------------
 -- Text objects
 ---------------
 -- Line text objects
-vim.keymap.set({ "x", "o" }, "iL", ":<C-u>normal! g_v^<CR>", { silent = true })
-vim.keymap.set({ "x", "o" }, "aL", ":<C-u>normal! $v0<CR>", { silent = true })
+vim.keymap.set(
+    { "x", "o" },
+    "iL",
+    ":<C-u>normal! g_v^<CR>",
+    { silent = true, desc = "Inner line" }
+)
+vim.keymap.set(
+    { "x", "o" },
+    "aL",
+    ":<C-u>normal! $v0<CR>",
+    { silent = true, desc = "Around line" }
+)
 -- Document text objects
 vim.keymap.set(
     { "x", "o" },
     "id",
     ":<C-u>normal! G$vgg0<CR>",
-    { silent = true }
+    { silent = true, desc = "Entire buffer" }
 )
 
 -- Copy current location to clipboard
@@ -187,26 +289,37 @@ vim.keymap.set("x", "<leader>l", function()
         ("'%s' was copied to clipboard"):format(vim.fn.getreg("+")),
         vim.log.levels.INFO
     )
-end, { silent = true })
+end, { silent = true, desc = "Yank path with line range" })
 
 -- Delete current file
 -- TODO: need to add confirmation
 vim.keymap.set(
     "n",
     "<leader><Del>",
-    "<cmd>call delete(expand('%:p')) | bdelete! %<CR>"
+    "<cmd>call delete(expand('%:p')) | bdelete! %<CR>",
+    { desc = "Delete file on disk and close buffer" }
 )
 
 -- Insert new line below/upper current line
-vim.keymap.set("n", "]<space>", "moo<Esc>`o")
-vim.keymap.set("n", "[<space>", "moO<Esc>`o")
-
--- close all buffers except current one
 vim.keymap.set(
     "n",
-    "<Leader>bd",
+    "]<space>",
+    "moo<Esc>`o",
+    { desc = "Insert blank line below" }
+)
+vim.keymap.set(
+    "n",
+    "[<space>",
+    "moO<Esc>`o",
+    { desc = "Insert blank line above" }
+)
+
+-- Закрыть все буферы, кроме текущего (<leader>cb — Snacks.bufdelete).
+vim.keymap.set(
+    "n",
+    "<leader>cB",
     ":%bd|e#<cr>",
-    { desc = "Close all buffers except current" }
+    { desc = "Close all other [b]uffers" }
 )
 
 -- Полный перезапуск не оставляет старые Lua-модули и обработчики плагинов.
@@ -231,15 +344,15 @@ vim.keymap.set("n", "<Leader>%", function()
 end, { desc = "cd into current file path" })
 
 -- Disable internal PageUp/PageDown, to use it in telescope/other places
-vim.keymap.set("n", "<PageUp>", "<NOP>")
-vim.keymap.set("n", "<PageDown>", "<NOP>")
+vim.keymap.set("n", "<PageUp>", "<NOP>", { desc = "Disable PageUp" })
+vim.keymap.set("n", "<PageDown>", "<NOP>", { desc = "Disable PageDown" })
 
--- gX: Web search
+-- Web search in Google
 vim.keymap.set("n", "<leader>gs", function()
     vim.ui.open(
         ("https://google.com/search?q=%s"):format(vim.fn.expand("<cword>"))
     )
-end)
+end, { desc = "Google search word under cursor" })
 vim.keymap.set("x", "<leader>gs", function()
     vim.ui.open(
         ("https://google.com/search?q=%s"):format(
@@ -256,7 +369,7 @@ vim.keymap.set("x", "<leader>gs", function()
         )
     )
     vim.api.nvim_input("<esc>")
-end)
+end, { desc = "Google search visual selection" })
 
 -- Rename linked file
 local function renameLinkedFile()
@@ -285,14 +398,24 @@ local function renameLinkedFile()
         print("No linked file detected.")
     end
 end
-vim.keymap.set("n", "<leader>rR", renameLinkedFile)
+vim.keymap.set(
+    "n",
+    "<leader>rR",
+    renameLinkedFile,
+    { desc = "Rename linked markdown file" }
+)
 
 -- Make mappings similar to TMUX mappings for Vim tabs
-vim.keymap.set("n", "<C-t>c", "<CMD>tabnew<CR>")
-vim.keymap.set("n", "<C-t>w", "<CMD>tabs<CR>")
-vim.keymap.set("n", "<C-t>[", "<CMD>tabnext<CR>")
-vim.keymap.set("n", "<C-t>]", "<CMD>tabprevious<CR>")
-vim.keymap.set("n", "<C-t>x", "<CMD>tabclose<CR>")
+vim.keymap.set("n", "<C-t>c", "<CMD>tabnew<CR>", { desc = "New tab" })
+vim.keymap.set("n", "<C-t>w", "<CMD>tabs<CR>", { desc = "List tabs" })
+vim.keymap.set("n", "<C-t>[", "<CMD>tabnext<CR>", { desc = "Next tab" })
+vim.keymap.set(
+    "n",
+    "<C-t>]",
+    "<CMD>tabprevious<CR>",
+    { desc = "Previous tab" }
+)
+vim.keymap.set("n", "<C-t>x", "<CMD>tabclose<CR>", { desc = "Close tab" })
 
 -- Make `j` work with wrapped lines
 vim.keymap.set({ "n", "v" }, "j", function()
@@ -301,7 +424,7 @@ vim.keymap.set({ "n", "v" }, "j", function()
     else
         return "m'" .. vim.v.count .. "j"
     end
-end, { expr = true })
+end, { expr = true, desc = "Down (display line)" })
 
 -- Make `k` work with wrapped lines
 vim.keymap.set({ "n", "v" }, "k", function()
@@ -310,7 +433,7 @@ vim.keymap.set({ "n", "v" }, "k", function()
     else
         return "m'" .. vim.v.count .. "k"
     end
-end, { expr = true })
+end, { expr = true, desc = "Up (display line)" })
 
 -- Change file Encoding
 vim.keymap.set("n", "<leader>fe", function()

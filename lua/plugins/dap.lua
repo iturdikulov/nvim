@@ -632,7 +632,6 @@ return {
 					compose_service = "ltms-backend",
 					package = "ltms-backend",
 					port = 61000,
-					live_reload_env = "LTMS_LIVE_RELOAD",
 				},
 				{
 					id = "rtms",
@@ -640,7 +639,6 @@ return {
 					compose_service = "rtms-backend",
 					package = "rtms-backend",
 					port = 61010,
-					live_reload_env = "RTMS_LIVE_RELOAD",
 				},
 				{
 					id = "qems",
@@ -648,7 +646,6 @@ return {
 					compose_service = "qems-backend",
 					package = "qems-backend",
 					port = 61020,
-					live_reload_env = "QEMS_LIVE_RELOAD",
 				},
 				{
 					id = "qdms",
@@ -656,7 +653,6 @@ return {
 					compose_service = "qdms-backend",
 					package = "qdms-backend",
 					port = 61030,
-					live_reload_env = "QDMS_LIVE_RELOAD",
 				},
 				{
 					id = "catalogs",
@@ -664,7 +660,6 @@ return {
 					compose_service = "catalogs",
 					package = "catalogs-backend",
 					port = 61040,
-					live_reload_env = "CATALOGS_LIVE_RELOAD",
 				},
 				{
 					id = "sso",
@@ -672,7 +667,6 @@ return {
 					compose_service = "sso",
 					package = "sso-backend",
 					port = 61050,
-					live_reload_env = "SSO_LIVE_RELOAD",
 				},
 			}
 
@@ -726,188 +720,6 @@ return {
 						callback(result)
 					end)
 				end)
-			end
-
-			local function watch_paths(project_root, _service)
-				-- Один watch на compose-проект; state общий с ./az.
-				local state_dir = project_root .. "/runtime/compose-watch"
-				vim.fn.mkdir(state_dir, "p")
-				return {
-					lock = state_dir .. "/project.lock",
-					pid = state_dir .. "/project.pid",
-					log = state_dir .. "/project.log",
-					legacy_done = state_dir .. "/project.legacy-cleaned",
-				}
-			end
-
-			local function read_watch_pid(path)
-				if vim.fn.filereadable(path) ~= 1 then
-					return nil
-				end
-				local lines = vim.fn.readfile(path)
-				return tonumber(lines[1])
-			end
-
-			local function process_matches_watch(pid, project_root, _service)
-				if not pid or vim.uv.kill(pid, 0) ~= 0 then
-					return false
-				end
-				local cwd = vim.uv.fs_readlink("/proc/" .. pid .. "/cwd")
-				if not cwd or vim.fs.normalize(cwd) ~= project_root then
-					return false
-				end
-				local ok, lines = pcall(
-					vim.fn.readfile,
-					"/proc/" .. pid .. "/cmdline",
-					"b"
-				)
-				if not ok then
-					return false
-				end
-				local command = table.concat(lines, " "):gsub("%z", " ")
-				return command:find("docker", 1, true)
-					and command:find("compose", 1, true)
-					and command:find("watch", 1, true)
-			end
-
-			local function find_watch_pid(project_root, service, paths)
-				local pid = read_watch_pid(paths.pid)
-				if process_matches_watch(pid, project_root, service) then
-					return pid
-				end
-				local result = vim.system({ "ps", "-eo", "pid=" }, { text = true }):wait()
-				if result.code ~= 0 then
-					return nil
-				end
-				for pid_text in (result.stdout or ""):gmatch("%d+") do
-					local candidate = tonumber(pid_text)
-					if process_matches_watch(candidate, project_root, service) then
-						return candidate
-					end
-				end
-				return nil
-			end
-
-			local function cleanup_legacy_ltms_watch(project_root, service, paths, done)
-				if service.id ~= "ltms" or vim.fn.filereadable(paths.legacy_done) == 1 then
-					done()
-					return
-				end
-				system_async({ "ps", "-eo", "pid=" }, { text = true }, function(result)
-					if result.code == 0 then
-						local shared_pid = read_watch_pid(paths.pid)
-						for pid_text in (result.stdout or ""):gmatch("%d+") do
-							local pid = tonumber(pid_text)
-							-- Не убиваем единственный project watch из ./az / shared pid.
-							if pid ~= shared_pid
-								and process_matches_watch(pid, project_root, service)
-							then
-								-- Старые per-service watch с именем сервиса в cmdline.
-								local ok, lines = pcall(
-									vim.fn.readfile,
-									"/proc/" .. pid .. "/cmdline",
-									"b"
-								)
-								local command = ok
-										and table.concat(lines, " "):gsub("%z", " ")
-									or ""
-								if command:find("ltms%-backend", 1)
-									or command:find("ltms_backend", 1, true)
-								then
-									vim.uv.kill(pid, 15)
-								end
-							end
-						end
-					end
-					vim.fn.writefile({ "legacy LTMS watcher cleanup completed" }, paths.legacy_done)
-					done()
-				end)
-			end
-
-			local function ensure_watch(project_root, service, callback)
-				local paths = watch_paths(project_root, service)
-				cleanup_legacy_ltms_watch(project_root, service, paths, function()
-					local pid = find_watch_pid(project_root, service, paths)
-					if pid then
-						vim.fn.writefile({ tostring(pid) }, paths.pid)
-						callback(true)
-						return
-					end
-					vim.fn.delete(paths.pid)
-
-					-- Без SERVICE: watch всех develop.watch (backend + frontend).
-					local watch_script = [[
-set -u
-exec 9>>"$1"
-flock -n 9 || exit 0
-printf '%s\n' "$$" >"$2"
-exec docker compose watch --quiet --no-up >>"$3" 2>&1
-]]
-					local job_id = vim.fn.jobstart({
-						"/bin/sh",
-						"-c",
-						watch_script,
-						"nvim-compose-watch",
-						paths.lock,
-						paths.pid,
-						paths.log,
-					}, { cwd = project_root, detach = true })
-					if job_id <= 0 then
-						vim.notify(
-							"Compose Watch: failed to launch. See " .. paths.log,
-							vim.log.levels.ERROR
-						)
-						callback(false)
-						return
-					end
-					vim.notify("Compose Watch: starting project watcher...", vim.log.levels.INFO)
-					callback(true)
-				end)
-			end
-
-			local function stop_watch(project_root, service, callback)
-				local paths = watch_paths(project_root, service)
-				local pid = find_watch_pid(project_root, service, paths)
-				if not pid then
-					vim.fn.delete(paths.pid)
-					callback(true)
-					return
-				end
-				vim.uv.kill(pid, 15)
-				vim.fn.delete(paths.pid)
-				callback(true)
-			end
-
-			local function get_live_reload(project_root, service, callback)
-				system_async(
-					{ "docker", "compose", "config", "--environment" },
-					{ cwd = project_root, text = true },
-					function(result)
-						if result.code ~= 0 then
-							vim.notify(service.label .. ": docker compose config failed.", vim.log.levels.ERROR)
-							callback(nil)
-							return
-						end
-						local value
-						for line in (result.stdout or ""):gmatch("[^\r\n]+") do
-							local name, candidate = line:match("^([^=]+)=(.*)$")
-							if name == service.live_reload_env then
-								value = candidate
-								break
-							end
-						end
-						value = value or "1"
-						if value ~= "0" and value ~= "1" then
-							vim.notify(
-								service.live_reload_env .. " must be 0 or 1, got: " .. value,
-								vim.log.levels.ERROR
-							)
-							callback(nil)
-							return
-						end
-						callback(value == "1")
-					end
-				)
 			end
 
 			local function compose_up(project_root, service, callback)
@@ -974,30 +786,12 @@ exec docker compose watch --quiet --no-up >>"$3" 2>&1
 					callback(false)
 					return
 				end
-				get_live_reload(project_root, service, function(live_reload)
-					if live_reload == nil then
+				compose_up(project_root, service, function(started)
+					if not started then
 						callback(false)
 						return
 					end
-					compose_up(project_root, service, function(started)
-						if not started then
-							callback(false)
-							return
-						end
-						-- Project-wide watch; LIVE_RELOAD=0 только отключает USR1 в контейнере,
-						-- сам watch не останавливаем (нужен другим сервисам / frontend).
-						if not live_reload then
-							wait_for_debugpy(project_root, service, config.connect.port, callback)
-							return
-						end
-						ensure_watch(project_root, service, function(watch_ok)
-							if not watch_ok then
-								callback(false)
-								return
-							end
-							wait_for_debugpy(project_root, service, config.connect.port, callback)
-						end)
-					end)
+					wait_for_debugpy(project_root, service, config.connect.port, callback)
 				end)
 			end
 
@@ -1039,7 +833,7 @@ exec docker compose watch --quiet --no-up >>"$3" 2>&1
 				local config = vim.deepcopy(session.config)
 				local filetype = session.filetype
 				active_profile_id = config.backend_profile
-				session.on_close["backend_compose_watch_auto_reattach"] = function()
+					session.on_close["backend_watchexec_auto_reattach"] = function()
 					if exiting
 						or suppressed_sessions[session]
 						or active_profile_id ~= config.backend_profile
@@ -1051,13 +845,9 @@ exec docker compose watch --quiet --no-up >>"$3" 2>&1
 					if not project_root then
 						return
 					end
-					get_live_reload(project_root, service, function(live_reload)
-						if live_reload and active_profile_id == config.backend_profile then
-							dap.run(config, { filetype = filetype, new = true })
-						elseif live_reload == false then
-							stop_watch(project_root, service, function() end)
-						end
-					end)
+					if active_profile_id == config.backend_profile then
+						dap.run(config, { filetype = filetype, new = true })
+					end
 				end
 			end
 

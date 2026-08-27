@@ -7,7 +7,7 @@ return {
         -- Global flag for force-enabling auto-save
         vim.g.auto_save_force = false
 
-        vim.keymap.set("n", "<leader>as", function()
+        vim.keymap.set("n", "<leader>aS", function()
             vim.g.auto_save_force = not vim.g.auto_save_force
             vim.notify(
                 "Auto-save force mode: "

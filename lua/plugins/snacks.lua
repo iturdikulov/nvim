@@ -1,3 +1,24 @@
+--- Корень git-репозитория или cwd — scope для recent files на dashboard.
+local function project_scope()
+	local ok, Snacks = pcall(require, "snacks")
+	if ok then
+		return Snacks.git.get_root(vim.fn.getcwd()) or vim.fn.getcwd()
+	end
+	return vim.fn.getcwd()
+end
+
+---@param file string
+local function file_in_project_scope(file)
+	local scope = vim.fs.normalize(project_scope())
+	file = vim.fs.normalize(file)
+	return file == scope or file:sub(1, #scope + 1) == scope .. "/"
+end
+
+local function pick_project_oldfiles()
+	local scope = vim.fs.normalize(project_scope())
+	require("snacks").dashboard.pick("oldfiles", { filter = { [scope] = true } })
+end
+
 return {
 	"folke/snacks.nvim",
 	priority = 1000,
@@ -7,6 +28,7 @@ return {
 	},
 	opts = {
 		dashboard = {
+			width = 90,
 			enabled = true,
 			preset = {
 				-- Defaults to a picker that supports `fzf-lua`, `telescope.nvim` and `mini.pick`
@@ -39,7 +61,7 @@ return {
 						icon = " ",
 						key = "r",
 						desc = "Recent Files",
-						action = ":lua Snacks.dashboard.pick('oldfiles')",
+						action = pick_project_oldfiles,
 					},
 					{
 						icon = " ",
@@ -77,13 +99,8 @@ return {
 					section = "recent_files",
 					indent = 2,
 					padding = 1,
-				},
-				{
-					icon = " ",
-					title = "Projects",
-					section = "projects",
-					indent = 2,
-					padding = 1,
+					limit = 20,
+					filter = file_in_project_scope,
 				},
 				{ section = "startup" },
 			},
@@ -176,13 +193,13 @@ return {
 		},
 	},
 	keys = {
-		-- dashboard
+		-- dashboard (`<leader>D` занят под "_d в remap.lua)
 		{
-			"<leader>D",
+			"<leader>H",
 			function()
 				Snacks.dashboard()
 			end,
-			desc = "Snacks Dashboard",
+			desc = "Dashboard",
 		},
 		-- Other
 		{
@@ -190,7 +207,7 @@ return {
 			function()
 				Snacks.explorer()
 			end,
-			desc = "Open File Explorer",
+			desc = "File Explorer",
 		},
 		{
 			"<leader>z",
@@ -221,25 +238,25 @@ return {
 			desc = "Notification History",
 		},
 		{
-			"<leader>bd",
+			"<leader>cb",
 			function()
-				Snacks.bufdelete()
+				require("config.buffers").delete()
 			end,
-			desc = "Delete Buffer",
+			desc = "[C]lose [b]uffer",
 		},
 		{
 			"<leader>cR",
 			function()
 				Snacks.rename.rename_file()
 			end,
-			desc = "Rename File and inform LSP",
+			desc = "Rename File (LSP)",
 		},
 		{
 			"<leader>gB",
 			function()
 				Snacks.gitbrowse.open({ what = "commit" })
 			end,
-			desc = "Git Browse",
+			desc = "Git Browse Commit",
 			mode = { "n", "v" },
 		},
 		{
@@ -259,14 +276,14 @@ return {
 					},
 				})
 			end,
-			desc = "Yadm",
+			desc = "Lazygit (yadm)",
 		},
 		{
 			"<leader>T",
 			function()
 				Snacks.terminal.toggle()
 			end,
-			desc = "Terminal",
+			desc = "Toggle Terminal",
 		},
 		{
 			-- Makefile Runner
@@ -308,7 +325,7 @@ return {
 			desc = "Run Make Target",
 		},
 		{
-			"<leader>gl",
+			"<leader>gb",
 			function()
 				Snacks.git.blame_line()
 			end,
@@ -319,7 +336,7 @@ return {
 			function()
 				Snacks.notifier.hide()
 			end,
-			desc = "Dismiss All Notifications",
+			desc = "Dismiss Notifications",
 		},
 		{
 			"]]",
@@ -352,6 +369,19 @@ return {
 				vim.print = _G.dd -- Override print to use snacks for `:=` command
 
 				local Snacks = require("snacks")
+
+				-- dashboard / picker keys при русской раскладке
+				local ok, lmu = pcall(require, "langmapper.utils")
+				if ok and Snacks.util and Snacks.util.normkey then
+					local normkey_orig = Snacks.util.normkey
+					Snacks.util.normkey = function(key)
+						if key then
+							key = lmu.translate_keycode(key, "default", "ru")
+						end
+						return normkey_orig(key)
+					end
+				end
+
 				-- Create some toggle mappings
 				Snacks.toggle
 					.option("spell", { name = "Spelling" })

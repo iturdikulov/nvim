@@ -16,22 +16,19 @@ return {
 			dependencies = { "miversen33/netman.nvim" },
 			config = function()
 				require("devcontainers").setup()
+				require("config.container_lsp").setup_cli_override()
+
+				local status = require("config.lsp_status")
 
 				local cli = require("devcontainers.cli")
 				local devcontainer_up = cli.devcontainer_up
 				cli.devcontainer_up = function(...)
 					local args = { ... }
 					local notify = vim.notify
-					vim.g.devcontainer_lsp_status = true
-					vim.cmd.redrawstatus()
+					status.inc()
 					vim.notify = function(message, level, opts)
-						if message:match("^Starting devcontainer") then
-							if message:match(": FAILED:") then
-								vim.g.devcontainer_lsp_status = nil
-								vim.cmd.redrawstatus()
-							else
-								return {}
-							end
+						if message:match("^Starting devcontainer") and not message:match(": FAILED:") then
+							return {}
 						end
 						return notify(message, level, opts)
 					end
@@ -40,8 +37,7 @@ return {
 						return devcontainer_up(unpack(args))
 					end, debug.traceback)
 					vim.notify = notify
-					vim.g.devcontainer_lsp_status = nil
-					vim.cmd.redrawstatus()
+					status.dec()
 					if not ok then
 						error(result)
 					end
@@ -57,6 +53,7 @@ return {
 			},
 			opts = (function()
 				local ensure_installed = {
+					"copilot",
 					"lua_ls",
 					"stylua",
 					"powershell_es",
@@ -106,6 +103,8 @@ return {
 	},
 
 	config = function()
+		require("config.lsp_status").setup()
+
 		-- Install non-lsp mason packages
 		local my_packages = {
 			-- Go
@@ -132,6 +131,50 @@ return {
 		}
 
 
+		local PYLSP_ROPE = "pylsp-rope==0.1.17"
+
+		local function mason_pylsp_venv_bin(name)
+			return vim.fs.joinpath(vim.fn.stdpath("data"), "mason/packages/python-lsp-server/venv/bin", name)
+		end
+
+		local function pylsp_rope_installed()
+			local python = mason_pylsp_venv_bin("python")
+			if vim.fn.executable(python) ~= 1 then
+				return false
+			end
+			vim.fn.system({ python, "-c", "import importlib.metadata as m; m.version('pylsp-rope')" })
+			return vim.v.shell_error == 0
+		end
+
+		local pylsp_rope_job ---@type integer|nil
+
+		local function ensure_pylsp_rope(force)
+			if not force and pylsp_rope_installed() then
+				return
+			end
+			local pip = mason_pylsp_venv_bin("pip")
+			if vim.fn.executable(pip) ~= 1 then
+				if force then
+					vim.notify("Mason python-lsp-server venv not found", vim.log.levels.ERROR)
+				end
+				return
+			end
+			if pylsp_rope_job and vim.fn.jobwait({ pylsp_rope_job }, 0)[1] == -1 then
+				return
+			end
+			pylsp_rope_job = vim.fn.jobstart({ pip, "install", PYLSP_ROPE }, {
+				on_exit = function(_, code)
+					pylsp_rope_job = nil
+					if force or code ~= 0 then
+						vim.notify(
+							code == 0 and "pylsp-rope installed" or "pylsp-rope install failed",
+							code == 0 and vim.log.levels.INFO or vim.log.levels.ERROR
+						)
+					end
+				end,
+			})
+		end
+
 		vim.keymap.set('n', '<leader>mi', function()
 			-- Join the table items into a single space-separated string
 			local packages_str = table.concat(my_packages, " ")
@@ -140,6 +183,23 @@ return {
 			desc = '[M]ason [I]nstall packages',
 			silent = true
 		})
+
+		vim.keymap.set("n", "<leader>mp", function()
+			ensure_pylsp_rope(true)
+		end, {
+			desc = "[M]ason [P]ylsp-rope install",
+			silent = true,
+		})
+
+		local ok_registry, registry = pcall(require, "mason-registry")
+		if ok_registry then
+			registry:on("package:install:success", function(pkg)
+				if pkg.name == "python-lsp-server" then
+					vim.schedule(ensure_pylsp_rope)
+				end
+			end)
+		end
+		vim.schedule(ensure_pylsp_rope)
 
 		-- List server capabilities
 		vim.api.nvim_create_user_command("LspCapabilities", function()
@@ -234,6 +294,7 @@ return {
 				{
 					name = "spell",
 					max_item_count = 3,
+					entry_filter = require("config.spell").cmp_entry_filter,
 				},
 			}),
 		})
@@ -275,19 +336,18 @@ return {
 			vim.lsp.protocol.make_client_capabilities(),
 			require("cmp_nvim_lsp").default_capabilities()
 		)
-		local has_devcontainers, devcontainers = pcall(require, "devcontainers")
 		local is_windows = require("config.platform").is_windows
-		local home = vim.uv.os_homedir()
-		local container_lsp_roots = {
-			[vim.fs.normalize(vim.fs.joinpath(home, "Desktop", "atd", "az-containers"))] = true,
-		}
+		local has_devcontainers = (not is_windows) and pcall(require, "devcontainers")
+		local container_lsp = has_devcontainers and require("config.container_lsp") or nil
+		local lsp_status = require("config.lsp_status")
+		local container_workspace = require("config.container_workspace")
 		local register_capability = vim.lsp.handlers["client/registerCapability"]
 
 		-- TODO: Remove when devcontainers.nvim handles container-only watcher baseUri values.
 		local function register_container_capability(err, params, ctx, config)
 			local client = vim.lsp.get_client_by_id(ctx.client_id)
 			local root_dir = client and client.config.root_dir
-			if root_dir and vim.uv.fs_stat(root_dir .. "/.devcontainer") then
+			if root_dir and container_workspace.has_devcontainer_ancestor(root_dir) then
 				params = vim.deepcopy(params)
 				for _, registration in ipairs(params.registrations or {}) do
 					if registration.method == "workspace/didChangeWatchedFiles" then
@@ -312,13 +372,19 @@ return {
 			local default_root_dir = default_config.root_dir
 			local default_root_markers = default_config.root_markers
 			config = config or {}
-			local container_cmd = has_devcontainers
-					and devcontainers.lsp_cmd(config.container_cmd or default_config.cmd)
+			local project_root_markers = config.project_root_markers
+			config.project_root_markers = nil
+			local container_cmd = container_lsp
+					and container_lsp.lsp_cmd(config.container_cmd or default_config.cmd, {
+						before_start = function()
+							lsp_status.inc()
+						end,
+					})
 				or nil
 			config.container_cmd = nil
 			config.cmd = function(dispatchers, client_config)
 				local root_dir = client_config.root_dir and vim.fs.normalize(client_config.root_dir)
-				if container_cmd and root_dir and container_lsp_roots[root_dir] then
+				if container_cmd and container_workspace.is_under_workspace(root_dir) then
 					return container_cmd(dispatchers, client_config)
 				end
 				local cmd = config.cmd_local or default_config.cmd
@@ -332,25 +398,25 @@ return {
 				["client/registerCapability"] = register_container_capability,
 			})
 			config.root_dir = function(bufnr, on_dir)
-				local container_root = vim.fs.root(bufnr, ".devcontainer")
-				if container_root then
-					on_dir(container_root)
+				-- Внутри monorepo с маркером `az` — только packages/*, не корень репо.
+				if container_workspace.workspace_root(bufnr) then
+					on_dir(container_workspace.find_project_root(bufnr, project_root_markers))
 					return
 				end
 
-			if type(default_root_dir) == "function" then
-				return default_root_dir(bufnr, on_dir)
+				if type(default_root_dir) == "function" then
+					return default_root_dir(bufnr, on_dir)
+				end
+				if default_root_markers then
+					on_dir(vim.fs.root(bufnr, default_root_markers))
+					return
+				end
+				if default_root_dir then
+					on_dir(default_root_dir)
+					return
+				end
+				on_dir(nil)
 			end
-			if default_root_markers then
-				on_dir(vim.fs.root(bufnr, default_root_markers))
-				return
-			end
-			if default_root_dir then
-				on_dir(default_root_dir)
-				return
-			end
-			on_dir(nil)
-		end
 			vim.lsp.config(name, config)
 		end
 
@@ -422,60 +488,188 @@ return {
 			vim.lsp.enable(server.name)
 		end
 
-		local local_vue_language_server_path = vim.fn.stdpath 'data' .. '/mason/packages/vue-language-server/node_modules/@vue/language-server'
+		-- Vue / vtsls — https://github.com/vuejs/language-tools/wiki/Neovim
+		local local_vue_language_server_path = vim.fn.stdpath("data")
+			.. "/mason/packages/vue-language-server/node_modules/@vue/language-server"
+
+		local CONTAINER_VUE_LS = "/usr/local/lib/node_modules/@vue/language-server"
+		local CONTAINER_TSDK = "/usr/local/lib/node_modules/typescript/lib"
+
+		local function uses_devcontainer_lsp(root)
+			return root
+				and container_workspace.is_under_workspace(root)
+				and container_workspace.has_devcontainer_ancestor(root)
+				and container_workspace.container_kind(root) == "frontend"
+		end
+
+		local function resolve_vue_language_server_path(root)
+			if uses_devcontainer_lsp(root) then
+				return CONTAINER_VUE_LS
+			end
+			root = root and vim.fs.normalize(root)
+			local candidates = {
+				root and (root .. "/node_modules/@vue/language-server"),
+				local_vue_language_server_path,
+			}
+			for _, path in ipairs(candidates) do
+				if path and vim.uv.fs_stat(path) then
+					return path
+				end
+			end
+			return local_vue_language_server_path
+		end
+
+		local function resolve_typescript_tsdk(root)
+			if uses_devcontainer_lsp(root) then
+				return CONTAINER_TSDK
+			end
+			if not root then
+				return nil
+			end
+			local lib = vim.fs.normalize(root) .. "/node_modules/typescript/lib"
+			if vim.uv.fs_stat(lib) then
+				return lib
+			end
+			local mason_tsdk = vim.fn.stdpath("data") .. "/mason/packages/typescript/lib"
+			if vim.uv.fs_stat(mason_tsdk) then
+				return mason_tsdk
+			end
+			return nil
+		end
+
 		local tsserver_filetypes = {
 			"typescript",
 			"javascript",
 			"javascriptreact",
 			"typescriptreact",
-			"vue"
+			"vue",
 		}
-		local vue_plugin = {
-			name = "@vue/typescript-plugin",
-			location = local_vue_language_server_path,
-			languages = { "vue" },
-			configNamespace = "typescript",
+		local js_only_filetypes = {
+			"javascript",
+			"javascriptreact",
+			"vue",
 		}
 
+		local function is_js_only_project(root)
+			return root and vim.uv.fs_stat(root .. "/tsconfig.json") == nil
+		end
+
+		--- JS-only: ts-plugin варнинги off, плагин остаётся для gD/K через vue_ls.
+		local function attach_js_only_ts_plugin_filter(client)
+			local root = client.config.root_dir
+			if not is_js_only_project(root) or client._js_only_ts_plugin_filter then
+				return
+			end
+			client._js_only_ts_plugin_filter = true
+			local publish = vim.lsp.handlers["textDocument/publishDiagnostics"]
+			client.handlers["textDocument/publishDiagnostics"] = function(err, result, ctx, ...)
+				local bufnr = ctx and ctx.bufnr
+				if
+					type(bufnr) ~= "number"
+					or bufnr <= 0
+					or not vim.api.nvim_buf_is_valid(bufnr)
+					or vim.bo[bufnr].filetype ~= "vue"
+					or not result
+					or not result.diagnostics
+				then
+					return publish(err, result, ctx, ...)
+				end
+				result.diagnostics = vim.tbl_filter(function(d)
+					if d.source ~= "ts-plugin" then
+						return true
+					end
+					local sev = d.severity or vim.diagnostic.severity.WARN
+					return sev <= vim.diagnostic.severity.ERROR
+				end, result.diagnostics)
+				if #result.diagnostics == 0 then
+					vim.diagnostic.reset(vim.lsp.diagnostic.get_namespace(client.id), bufnr)
+					return
+				end
+				return publish(err, result, ctx, ...)
+			end
+		end
+
+		local function make_vue_plugin(root)
+			return {
+				name = "@vue/typescript-plugin",
+				location = resolve_vue_language_server_path(root),
+				languages = { "vue" },
+				configNamespace = "typescript",
+				enableForWorkspaceTypeScriptVersions = true,
+			}
+		end
+
 		local vtsls_config = {
-            capabilities = capabilities,
+			capabilities = capabilities,
+			project_root_markers = { "package.json" },
 			before_init = function(_, config)
-				local in_devcontainer = config.root_dir
-					and vim.uv.fs_stat(config.root_dir .. "/.devcontainer") ~= nil
-				config.settings.vtsls.tsserver.globalPlugins[1].location = in_devcontainer
-					and "/usr/local/lib/node_modules/@vue/language-server"
-					or local_vue_language_server_path
+				local root = config.root_dir
+				config.settings.vtsls.tsserver.globalPlugins = { make_vue_plugin(root) }
+				local tsdk = resolve_typescript_tsdk(root)
+				if tsdk then
+					config.settings.typescript = vim.tbl_deep_extend("force", config.settings.typescript or {}, {
+						tsdk = tsdk,
+					})
+				end
+				if is_js_only_project(root) then
+					config.filetypes = js_only_filetypes
+					config.settings.javascript = vim.tbl_deep_extend(
+						"force",
+						config.settings.javascript or {},
+						{
+							validate = { enable = true },
+							implicitProjectConfig = { checkJs = true },
+						}
+					)
+					-- ts-plugin в .vue идёт через namespace typescript — без validate, но plugin жив
+					config.settings.typescript = vim.tbl_deep_extend(
+						"force",
+						config.settings.typescript or {},
+						{
+							validate = { enable = false },
+						}
+					)
+				end
 			end,
 			settings = {
 				vtsls = {
 					tsserver = {
-						globalPlugins = {
-							vue_plugin,
-						},
+						globalPlugins = {},
 					},
 				},
 			},
 			filetypes = tsserver_filetypes,
+			on_attach = function(client, bufnr)
+				attach_js_only_ts_plugin_filter(client)
+				local caps = client.server_capabilities
+				if not caps.semanticTokensProvider then
+					return
+				end
+				if vim.bo[bufnr].filetype == "vue" then
+					caps.semanticTokensProvider.full = false
+				else
+					caps.semanticTokensProvider.full = true
+				end
+			end,
 		}
 
-		local ts_ls_config = {
-            capabilities = capabilities,
-			init_options = {
-				plugins = {
-					vue_plugin,
-				},
-			},
-			filetypes = tsserver_filetypes,
+		-- on_init для tsserver/request — из nvim-lspconfig/lsp/vue_ls.lua
+		local vue_ls_config = {
+			capabilities = capabilities,
+			project_root_markers = { "package.json" },
+			on_attach = function(client, bufnr)
+				attach_js_only_ts_plugin_filter(client)
+				if vim.bo[bufnr].filetype == "vue" and client.server_capabilities.semanticTokensProvider then
+					client.server_capabilities.semanticTokensProvider.full = true
+				end
+			end,
 		}
 
-		-- If you are on most recent `nvim-lspconfig`
-        local vue_ls_config = {
-            capabilities = capabilities,
-		}
+		vim.api.nvim_set_hl(0, "@lsp.type.component", { link = "@type" })
+
 		configure_container_lsp("vtsls", vtsls_config)
 		configure_container_lsp("vue_ls", vue_ls_config)
-		vim.lsp.config("ts_ls", ts_ls_config)
-		vim.lsp.enable({ "vue_ls", "vtsls" }) -- If using `ts_ls` replace `vtsls` to `ts_ls`
+		vim.lsp.enable({ "vue_ls", "vtsls" })
 
 		vim.lsp.config("texlab", {
 			capabilities = capabilities,
@@ -541,6 +735,7 @@ return {
 
 		configure_container_lsp("basedpyright", {
 			capabilities = basedpyrightCapabilities,
+			project_root_markers = { "pyproject.toml", "requirements.txt" },
 			settings = {
 				basedpyright = {
 					typeCheckingMode = "standard", -- off, basic, standard, strict, all
@@ -616,6 +811,7 @@ return {
 
 		configure_container_lsp("pylsp", {
 			capabilities = capabilities,
+			project_root_markers = { "pyproject.toml", "requirements.txt" },
 			on_attach = function(client)
 				-- Disable capabilities in favor to basedpyright
 				local disabled_capabilities = {
@@ -649,6 +845,7 @@ return {
 						jedi_definition = { enabled = false },
 						jedi_hover = { enabled = false },
 						jedi_references = { enabled = false },
+						jedi_rename = { enabled = false },
 						jedi_signature_help = { enabled = false },
 						jedi_symbols = { enabled = false },
 						jedi_type_definition = { enabled = false },
@@ -656,6 +853,9 @@ return {
 						preload = { enabled = false },
 						pycodestyle = { enabled = false },
 						pyflakes = { enabled = false },
+						pylsp_rope = {
+							rename = { enabled = false },
+						},
 						yapf = { enabled = false },
 					},
 				},
@@ -665,6 +865,7 @@ return {
 
 		configure_container_lsp("ruff", {
 			capabilities = capabilities,
+			project_root_markers = { "pyproject.toml", "requirements.txt" },
 		})
 		vim.lsp.enable("ruff")
 
@@ -779,6 +980,8 @@ return {
 		})
 		vim.lsp.enable("sqls")
 
+		vim.lsp.enable("copilot")
+
 		-- Configure diagnostic
 		vim.diagnostic.config({
 			-- update_in_insert = true,
@@ -804,6 +1007,13 @@ return {
 		autocmd("LspAttach", {
 			group = LSPGroup,
 			callback = function(e)
+				local client = vim.lsp.get_client_by_id(e.data.client_id)
+				if client and client.name == "copilot" then
+					if client:supports_method("textDocument/inlineCompletion", e.buf) then
+						vim.lsp.inline_completion.enable(true, { bufnr = e.buf })
+					end
+				end
+
 				local map = function(lhs, rhs, desc)
 					if desc then
 						desc = "[LSP] " .. desc

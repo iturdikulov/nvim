@@ -13,11 +13,8 @@ return {
 			vue = { "eslint_d" },
 		}
 
-		-- Те же корни, что container_lsp_roots в lsp.lua
-		local home = vim.uv.os_homedir()
-		local container_lint_roots = {
-			[vim.fs.normalize(vim.fs.joinpath(home, "Desktop", "atd", "az-containers"))] = true,
-		}
+		-- Workspace monorepo: файл `az` в корне (см. config/container_workspace.lua)
+		local container_workspace = require("config.container_workspace")
 
 		local eslint_root_markers = {
 			"eslint.config.mjs",
@@ -29,22 +26,22 @@ return {
 		}
 
 		local container_up_cache = {
-			workspace = nil,
+			key = nil,
 			up = false,
 			checked_at = 0,
 		}
 
-		---@param workspace string
+		---@param cli_root string package path (для kind) или workspace
 		---@return boolean
-		local function container_is_up(workspace)
+		local function container_is_up(cli_root)
 			local now = vim.uv.now()
-			if container_up_cache.workspace == workspace and now - container_up_cache.checked_at < 5000 then
+			if container_up_cache.key == cli_root and now - container_up_cache.checked_at < 5000 then
 				return container_up_cache.up
 			end
 			local ok, cli = pcall(require, "devcontainers.cli")
-			local up = ok and cli.container_is_running(workspace) or false
+			local up = ok and cli.container_is_running(cli_root) or false
 			container_up_cache = {
-				workspace = workspace,
+				key = cli_root,
 				up = up,
 				checked_at = now,
 			}
@@ -90,12 +87,18 @@ return {
 				linter.cwd = package_root
 			end
 
-			local workspace = vim.fs.root(bufnr, ".devcontainer")
-			if not workspace then
+			local workspace = container_workspace.workspace_root(bufnr)
+			if not workspace or not package_root then
 				return linter
 			end
 			workspace = vim.fs.normalize(workspace)
-			if not container_lint_roots[workspace] or not container_is_up(workspace) then
+			package_root = vim.fs.normalize(package_root)
+
+			-- eslint_d только в alpine (*-frontend)
+			if container_workspace.container_kind(package_root) ~= "frontend" then
+				return linter
+			end
+			if not container_is_up(package_root) then
 				return linter
 			end
 
@@ -106,14 +109,14 @@ return {
 
 			local host_fname = vim.api.nvim_buf_get_name(bufnr)
 			local container_fname = to_container_path(workspace, host_fname)
-			local container_pkg = package_root and to_container_path(workspace, package_root) or "/workspace"
+			local container_pkg = to_container_path(workspace, package_root)
 			-- devcontainer exec стартует с cwd=/workspace → eslint_d timeout без cd в пакет
 			local shell = string.format(
 				"cd %s && exec eslint_d --format json --stdin --stdin-filename %s",
 				vim.fn.shellescape(container_pkg),
 				vim.fn.shellescape(container_fname)
 			)
-			local prefix = cli.cmd(workspace, "exec", "sh", "-c", shell)
+			local prefix = cli.cmd(package_root, "exec", "sh", "-c", shell)
 			linter.cmd = prefix[1]
 			linter.args = vim.list_slice(prefix, 2)
 			return linter

@@ -15,6 +15,7 @@ vim.opt.expandtab = true
 vim.opt.formatoptions:remove({ "t" })
 
 vim.opt.showmode = false
+vim.opt.cmdheight = 0
 vim.opt.smartindent = true
 
 -- Wrapping
@@ -24,6 +25,9 @@ vim.opt.showbreak = "↳ "
 vim.opt.backup = false
 vim.opt.undofile = true
 vim.opt.swapfile = false
+
+-- Восстановленная terminal-панель Sidekick не может привязаться к старому UI-сеансу.
+vim.opt.sessionoptions:remove("terminal")
 
 -- Enable local configuration
 vim.opt.exrc = true
@@ -96,9 +100,8 @@ vim.g.markdown_fenced_languages = {
 
 -- Use treesitter folding
 vim.opt.foldmethod = "expr"
-vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
+vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 vim.opt.foldlevelstart = 99
-vim.cmd([[ set nofoldenable]])
 
 -- Enable markdown folding (can be slow!)
 vim.g.markdown_folding = 1
@@ -127,6 +130,9 @@ vim.g.clipboard = {
     ["*"] = function() return {} end,
   },
 }
+
+-- Steady cursor in :terminal / Snacks (default t-mode blinks)
+vim.opt.guicursor:append("t:blinkon0")
 
 -- Cursorline highlighting control
 --  Only have it on in the active buffer

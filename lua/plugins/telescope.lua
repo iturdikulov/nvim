@@ -103,5 +103,11 @@ return {
             builtin.help_tags,
             { desc = "[H]elp tags" }
         )
+        vim.keymap.set(
+            "n",
+            "<leader>fb",
+            builtin.buffers,
+            { desc = "[F]ind [b]uffers" }
+        )
     end,
 }

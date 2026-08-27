@@ -8,6 +8,7 @@ return {
                 icons_enabled = true,
                 section_separators = "",
                 component_separators = "",
+                globalstatus = true,
             },
             sections = {
                 lualine_b = {
@@ -16,7 +17,7 @@ return {
                     "diagnostics",
                     {
                         function()
-                            return vim.g.devcontainer_lsp_status and "🐋" or ""
+                            return vim.g.lsp_attach_status and "LSP attach" or ""
                         end,
                         color = { fg = "#E5C07B" },
                     },
