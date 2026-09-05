@@ -530,6 +530,7 @@ return {
 					"threads",
 					"repl",
 					"console",
+					"backend_logs",
 				},
 				base_sections = {
 					breakpoints = { label = "Breaks", keymap = "B" },
@@ -582,9 +583,79 @@ return {
 			},
 		},
 		config = function(_, opts)
-			require("dap-view").setup(opts)
-
 			local dap = require("dap")
+			local logs = { bufnr = nil, job_id = nil, service = nil }
+
+			local function stop_backend_logs()
+				if logs.job_id then
+					pcall(vim.fn.jobstop, logs.job_id)
+					logs.job_id = nil
+				end
+				logs.service = nil
+			end
+
+			local function start_backend_logs()
+				local session = dap.session()
+				local config = session and session.config or nil
+				local service = config and config.backend_compose_service
+				local project_root = config and config.backend_project_root
+
+				if not service or not project_root then
+					vim.notify("DAP Logs: attach to an az backend first.", vim.log.levels.WARN)
+					return
+				end
+
+				if logs.service == service and logs.job_id and vim.fn.jobwait({ logs.job_id }, 0)[1] == -1 then
+					return
+				end
+
+				stop_backend_logs()
+				logs.service = service
+				logs.job_id = vim.fn.termopen({
+					"docker",
+					"compose",
+					"-f",
+					project_root .. "/docker-compose.yml",
+					"-f",
+					project_root .. "/docker-compose.override.yml",
+					"logs",
+					"-f",
+					"--tail",
+					"100",
+					service,
+				}, {
+					cwd = project_root,
+					on_exit = function()
+						logs.job_id = nil
+					end,
+				})
+			end
+
+			vim.api.nvim_create_autocmd("VimLeavePre", {
+				callback = stop_backend_logs,
+			})
+			vim.api.nvim_create_autocmd("BufWipeout", {
+				callback = function(event)
+					if event.buf == logs.bufnr then
+						stop_backend_logs()
+						logs.bufnr = nil
+					end
+				end,
+			})
+
+			opts.winbar.custom_sections = {
+				backend_logs = {
+					label = "Logs",
+					keymap = "L",
+					buffer = function()
+						logs.bufnr = vim.api.nvim_create_buf(false, true)
+						vim.api.nvim_buf_set_name(logs.bufnr, "DAP Backend Logs")
+						return logs.bufnr
+					end,
+					action = start_backend_logs,
+				},
+			}
+			require("dap-view").setup(opts)
 
 			vim.keymap.set("n", "<leader>dv", function()
 				vim.cmd("DapViewToggle")
@@ -602,7 +673,6 @@ return {
 			dap.listeners.before.event_exited.dapui_config = function()
 				vim.cmd("DapViewClose")
 			end
-
 			dap.listeners.after.event_initialized["set_exception_breakpoints"] = function()
 				dap.defaults.python.exception_breakpoints = { "raised" } -- raised
 			end
@@ -786,6 +856,8 @@ return {
 					callback(false)
 					return
 				end
+				config.backend_project_root = project_root
+				config.backend_compose_service = service.compose_service
 				compose_up(project_root, service, function(started)
 					if not started then
 						callback(false)

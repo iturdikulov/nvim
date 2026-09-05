@@ -16,7 +16,6 @@ return {
 			dependencies = { "miversen33/netman.nvim" },
 			config = function()
 				require("devcontainers").setup()
-				require("config.container_lsp").setup_cli_override()
 
 				local status = require("config.lsp_status")
 
@@ -398,6 +397,13 @@ return {
 				["client/registerCapability"] = register_container_capability,
 			})
 			config.root_dir = function(bufnr, on_dir)
+				-- Terminal, help and other virtual buffers are not project source files.
+				-- In particular, DAP's `docker compose logs` terminal must never be
+				-- announced to Python language servers as `term://…/docker`.
+				if vim.bo[bufnr].buftype ~= "" or vim.api.nvim_buf_get_name(bufnr):match("^%a+://") then
+					on_dir(nil)
+					return
+				end
 				-- Внутри monorepo с маркером `az` — только packages/*, не корень репо.
 				if container_workspace.workspace_root(bufnr) then
 					on_dir(container_workspace.find_project_root(bufnr, project_root_markers))
@@ -497,9 +503,7 @@ return {
 
 		local function uses_devcontainer_lsp(root)
 			return root
-				and container_workspace.is_under_workspace(root)
 				and container_workspace.has_devcontainer_ancestor(root)
-				and container_workspace.container_kind(root) == "frontend"
 		end
 
 		local function resolve_vue_language_server_path(root)
